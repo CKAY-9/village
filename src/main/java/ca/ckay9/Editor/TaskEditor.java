@@ -1,0 +1,62 @@
+package ca.ckay9.Editor;
+
+import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockPlaceEvent;
+
+import ca.ckay9.Utils;
+import ca.ckay9.Game.Game;
+import ca.ckay9.Game.VillagerTask;
+import ca.ckay9.Game.VillagerTaskType;
+
+public class TaskEditor implements Listener {
+    private Editor editor;
+    private Game game;
+
+    public TaskEditor(Editor editor, Game game) {
+        this.editor = editor;
+        this.game = game;
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onBlockPlace(BlockPlaceEvent event) {
+        // is in editor
+        Player player = event.getPlayer();
+        EditorState state = this.editor.getEditorStates().get(player.getUniqueId());
+        if (state == null || state != EditorState.TASK) {
+            return;
+        }
+
+        Block block = event.getBlock();
+        Material blockMat = block.getType();
+        // exit editor
+        if (blockMat == Material.BARRIER) {
+            this.editor.exitEditor(player);
+            event.setCancelled(true);
+            return;
+        }
+
+        VillagerTask task = new VillagerTask(block);
+        if (blockMat == Material.SMITHING_TABLE) {
+            // math task
+            task.setTaskType(VillagerTaskType.MATH);
+        } else if (blockMat == Material.CRAFTING_TABLE) {
+            // craft task
+            task.setTaskType(VillagerTaskType.CRAFT);
+        } else if (blockMat == Material.LECTERN) {
+            // trivia task
+            task.setTaskType(VillagerTaskType.TRIVIA);
+        } else if (blockMat == Material.ENCHANTING_TABLE) {
+            // custom task
+            task.setTaskType(VillagerTaskType.CUSTOM);
+        }
+
+        this.game.addVillagerTask(task);
+        player.sendMessage(Utils
+                .formatText("&a&l[Village]&r&a Created new task! Villagers will now be able to complete this"));
+    }
+}

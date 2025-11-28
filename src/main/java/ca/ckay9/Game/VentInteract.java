@@ -1,0 +1,50 @@
+package ca.ckay9.Game;
+
+import org.bukkit.block.Block;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
+
+public class VentInteract implements Listener {
+    private Game game;
+
+    public VentInteract(Game game) {
+        this.game = game;
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onInventoryClick(InventoryClickEvent event) {
+        if (!this.game.isGameInProgress()) {
+            return;
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onBlockInteract(PlayerInteractEvent event) {
+        if (!this.game.isGameInProgress()) {
+            return;
+        }
+        
+        if (event.getAction() != Action.RIGHT_CLICK_BLOCK) {
+            return;
+        }
+
+        Player player = event.getPlayer();
+        if (this.game.isPlayerVillager(player)) {
+            //return;
+        }
+
+        Block block = event.getClickedBlock();
+        Vent vent = game.getVentAtLocation(block.getLocation());
+        if (vent == null) {
+            return;
+        }
+
+        vent.openVentConnectionsMenu(player);
+        event.setCancelled(true);
+    }
+}

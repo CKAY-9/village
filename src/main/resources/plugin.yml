@@ -1,0 +1,9 @@
+name: Village
+api-version: 1.19
+version: "${project.version}"
+main: ca.ckay9.Village
+authors: [CKAY9]
+description: "${project.description}"
+commands:
+  village:
+    description: Manage the Village gamemode.
