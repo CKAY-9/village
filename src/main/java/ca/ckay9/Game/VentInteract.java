@@ -9,6 +9,8 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 
+import ca.ckay9.Village;
+
 public class VentInteract implements Listener {
     private Game game;
 
@@ -18,14 +20,14 @@ public class VentInteract implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onInventoryClick(InventoryClickEvent event) {
-        if (!this.game.isGameInProgress()) {
+        if (!this.game.isGameInProgress() && !Village.inDeveloperDebug()) {
             return;
         }
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onBlockInteract(PlayerInteractEvent event) {
-        if (!this.game.isGameInProgress()) {
+        if (!this.game.isGameInProgress() && !Village.inDeveloperDebug()) {
             return;
         }
         
@@ -34,8 +36,8 @@ public class VentInteract implements Listener {
         }
 
         Player player = event.getPlayer();
-        if (this.game.isPlayerVillager(player)) {
-            //return;
+        if (this.game.isPlayerVillager(player) && !Village.inDeveloperDebug()) {
+            return;
         }
 
         Block block = event.getClickedBlock();

@@ -86,6 +86,7 @@ public class VillageCommand implements CommandExecutor {
                 handleGameEnd();
                 break;
             case "no-edit":
+                this.village.getEditor().exitEditor(player);    
                 break;
             default:
                 break;

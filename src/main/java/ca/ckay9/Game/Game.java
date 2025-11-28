@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.UUID;
 
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
 
@@ -18,7 +17,7 @@ public class Game {
     private ArrayList<VillagerTask> villagerTasks;
     private HashMap<UUID, Role> playerRoles;
     private HashMap<UUID, ChatTaskProgress> chatTaskExpectedResults;
-    private HashMap<UUID, Material> craftTaskExpectedResults;
+    private HashMap<UUID, CraftTaskProgress> craftTaskExpectedResults;
     private ArrayList<Vent> mobVents;
     private Village village;
 
@@ -38,15 +37,15 @@ public class Game {
         manager.registerEvents(new VillagerTaskInteract(this), village);
     }
 
-    public HashMap<UUID, Material> getCraftTaskExpectedResults() {
+    public HashMap<UUID, CraftTaskProgress> getCraftTaskExpectedResults() {
         return this.craftTaskExpectedResults;
     }
 
-    public void setCraftTaskExpectedResults(HashMap<UUID, Material> results) {
+    public void setCraftTaskExpectedResults(HashMap<UUID, CraftTaskProgress> results) {
         this.craftTaskExpectedResults = results;
     }
 
-    public void addCraftTaskExpectedResult(UUID uuid, Material answer) {
+    public void addCraftTaskExpectedResult(UUID uuid, CraftTaskProgress answer) {
         this.craftTaskExpectedResults.put(uuid, answer);
     }
 

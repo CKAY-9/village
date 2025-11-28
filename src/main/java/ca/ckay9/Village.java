@@ -25,8 +25,20 @@ public class Village extends JavaPlugin {
         return this.editor;
     }
 
+    
+    public static boolean inDeveloperDebug() {
+        return Storage.config.getBoolean("debug.developer", false);
+    }
+
+    public static boolean verboseLogging() {
+        return Storage.config.getBoolean("debug.verboseLogging", false);
+    }
+
     @Override
     public void onEnable() {
+        Storage.initializeConfig();
+        Storage.initializeWorldsData();
+
         this.game = new Game(this);
         this.editor = new Editor(this);
 

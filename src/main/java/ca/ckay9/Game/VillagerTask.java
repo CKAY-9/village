@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import ca.ckay9.Utils;
+import ca.ckay9.Village;
 
 public class VillagerTask {
     private Block block;
@@ -50,9 +51,11 @@ public class VillagerTask {
             answer = a * b;
         }
 
+        Utils.verbosePlayerLog(player, "Started math task.\n  -> a = " + a + "\n  -> b = " + b + "\n  -> operand = "
+                + operand + "\n  -> answer = " + answer);
         game.addChatTaskExpectedResult(player.getUniqueId(), new ChatTaskProgress(this, String.valueOf(answer)));
         player.sendMessage(Utils.formatText(
-                "&b&l[MATH TASK]&r&b What is " + a + " " + operand + " " + b));
+                "&3&l[MATH TASK]&r&3 What is " + a + " " + operand + " " + b + "?"));
     }
 
     private void craftTask(Player player, Game game) {
@@ -79,13 +82,35 @@ public class VillagerTask {
             player.getInventory().addItem(itemsToGive[i]);
         }
 
-        game.addCraftTaskExpectedResult(player.getUniqueId(), finalProduct);
+        String finalProductName = finalProduct.name().replaceAll("_", " ");
+        Utils.verbosePlayerLog(player, "Started craft task.\n  -> Final Product = " + finalProductName);
+        game.addCraftTaskExpectedResult(player.getUniqueId(), new CraftTaskProgress(this, finalProduct));
         player.sendMessage(Utils.formatText(
-                "&b&l[CRAFT TASK]&r&b You must craft the following item: " + finalProduct.name().replaceAll("_", " ")));
+                "&b&l[CRAFT TASK]&r&b Craft the following item: " + finalProductName));
     }
 
     private void triviaTask(Player player, Game game) {
+        Random random = new Random();
 
+        String[] questions = {
+                "What year did Minecraft officially release?",
+                "Do pigs fly (yes/no)?",
+                "How many iron ingots do you need to craft a full set of armor?"
+        };
+        String[] answers = {
+                "2011",
+                "no",
+                "24"
+        };
+        int selectedIndex = random.nextInt(0, questions.length);
+
+        String queston = questions[selectedIndex];
+        String answer = answers[selectedIndex];
+
+        Utils.verbosePlayerLog(player,
+                "Started trivia task.\n  -> Question = " + queston + "\n  -> Answer = " + answer);
+        game.addChatTaskExpectedResult(player.getUniqueId(), new ChatTaskProgress(this, answer));
+        player.sendMessage(Utils.formatText("&9&l[TRIVIA TASK]&r&9 " + queston));
     }
 
     private void customTask(Player player, Game game) {
@@ -99,12 +124,15 @@ public class VillagerTask {
      * @param game   The game object
      */
     public void startTask(Player player, Game game) {
-        if (!this.assignedToThis(player.getUniqueId())) {
+        if (!this.assignedToThis(player.getUniqueId()) && !Village.inDeveloperDebug()) {
             player.sendMessage(Utils.formatText("&c&l[TASK]&r&c You aren't assigned to this task"));
-            //return;
+            return;
         }
 
+        Utils.verbosePlayerLog(player, "Attempting to start task.");
+
         if (this.hasCompleted(player.getUniqueId())) {
+            Utils.verbosePlayerLog(player, "Already completed task.");
             player.sendMessage(Utils.formatText("&a&l[TASK]&r&a You have already completed this task."));
             return;
         }
@@ -137,6 +165,7 @@ public class VillagerTask {
      * @param player The player who completed the Task
      */
     public void completeTask(Player player) {
+        Utils.verbosePlayerLog(player, "Completed task.");
         this.assignedVillagers.put(player.getUniqueId(), true);
         player.sendMessage(Utils.formatText("&a&l[TASK]&r&a Completed task!"));
     }
@@ -147,6 +176,7 @@ public class VillagerTask {
      * @param player The player who failed the task
      */
     public void failTask(Player player) {
+        Utils.verbosePlayerLog(player, "Failed task.");
         this.assignedVillagers.put(player.getUniqueId(), false);
         player.sendMessage(Utils.formatText("&c&l[TASK]&r&c Failed task! Retry by interacting with it."));
     }
