@@ -106,6 +106,7 @@ public class VillagerTaskInteract implements Listener {
                         + "\n  -> Received = " + receivedMaterial.name());
 
         if (receivedMaterial.equals(progress.getMaterial())) {
+            this.game.getCraftTaskExpectedResults().remove(player.getUniqueId());
             progress.getTask().completeTask(player);
         } else {
             progress.getTask().failTask(player);

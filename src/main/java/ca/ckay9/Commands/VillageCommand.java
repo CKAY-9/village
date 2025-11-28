@@ -16,14 +16,6 @@ public class VillageCommand implements CommandExecutor {
         this.village = village;
     }
 
-    private void handleGameStart() {
-
-    }
-
-    private void handleGameEnd() {
-
-    }
-
     private void handleSpawnLocation(Player player) {
         this.village.getGame().setSpawnLocation(player.getLocation());
         player.sendMessage(Utils
@@ -80,10 +72,10 @@ public class VillageCommand implements CommandExecutor {
                 handleSpawnLocation(player);
                 break;
             case "start":
-                handleGameStart();
+                this.village.getGame().start();
                 break;
             case "end":
-                handleGameEnd();
+                this.village.getGame().end();
                 break;
             case "no-edit":
                 this.village.getEditor().exitEditor(player);    

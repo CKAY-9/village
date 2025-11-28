@@ -1,17 +1,28 @@
 package ca.ckay9.Game;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.PluginManager;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
+import ca.ckay9.Utils;
 import ca.ckay9.Village;
 
 public class Game {
     private Status status;
+    private HUD hud;
     private Location spawnLocation;
     private Location meetingLocation;
     private ArrayList<VillagerTask> villagerTasks;
@@ -20,10 +31,13 @@ public class Game {
     private HashMap<UUID, CraftTaskProgress> craftTaskExpectedResults;
     private ArrayList<Vent> mobVents;
     private Village village;
+    private int tasksPerVillager;
+    private int villagerCount;
 
     public Game(Village village) {
         this.village = village;
         this.status = Status.NO_GAME;
+        this.hud = new HUD();
         this.villagerTasks = new ArrayList<>();
         this.mobVents = new ArrayList<>();
         this.playerRoles = new HashMap<>();
@@ -31,6 +45,8 @@ public class Game {
         this.meetingLocation = null;
         this.chatTaskExpectedResults = new HashMap<>();
         this.craftTaskExpectedResults = new HashMap<>();
+        this.villagerCount = 1;
+        this.tasksPerVillager = 1;
 
         PluginManager manager = village.getServer().getPluginManager();
         manager.registerEvents(new VentInteract(this), village);
@@ -59,6 +75,145 @@ public class Game {
 
     public void addChatTaskExpectedResult(UUID uuid, ChatTaskProgress progress) {
         this.chatTaskExpectedResults.put(uuid, progress);
+    }
+
+    public int getVillagerCount() {
+        return this.villagerCount;
+    }
+
+    public void setVillagerCount(int value) {
+        this.villagerCount = value;
+    }
+
+    public int getMobCount() {
+        return Bukkit.getOnlinePlayers().size() - this.getVillagerCount();
+    }
+
+    public void setMobCount(int value) {
+        this.villagerCount = Bukkit.getOnlinePlayers().size() - value;
+    }
+
+    /**
+     * @return The amount of tasks each villager
+     */
+    public int getTasksPerVillager() {
+        return this.tasksPerVillager;
+    }
+
+    /**
+     * Attempts to set tasksPerVillager to the new value. Will fail if you go above
+     * the max possible amount of tasks.
+     * 
+     * @param value The value to set
+     */
+    public void setTasksPerVillager(int value) {
+        int maxValue = this.getVillagerTasks().size();
+        if (value > maxValue) {
+            Utils.verboseLog("Attempted to set tasksPerVillager above max value.\n  -> max = " + maxValue
+                    + "\n  -> attempted value = " + value);
+            return;
+        }
+
+        this.tasksPerVillager = value;
+    }
+
+    /**
+     * 
+     * @return The fraction of tasks that have been completed. Double between 0 and
+     *         1
+     */
+    public double getTaskCompletion() {
+        return this.getAmountOfCompletedTasks() / (tasksPerVillager * villagerCount);
+    }
+
+    /**
+     * @return The amount of assigned tasks that have been completed
+     */
+    public int getAmountOfCompletedTasks() {
+        int total = 0;
+        for (VillagerTask task : this.getVillagerTasks()) {
+            for (Map.Entry<UUID, Boolean> assigned : task.getAssignedVillagers().entrySet()) {
+                if (assigned.getValue()) {
+                    total++;
+                }
+            }
+        }
+
+        return total;
+    }
+
+    /**
+     * Attempts to start a game of Village.
+     * Can fail if locations aren't setup, no players, etc.
+     */
+    public void start() {
+        // players check
+        if (Bukkit.getOnlinePlayers().size() <= 0) {
+            Utils.verboseLog("Failed to start Village game. No online players.");
+            return;
+        }
+
+        // location checks
+        if (this.getSpawnLocation() == null || this.getMeetingLocation() == null) {
+            Utils.verboseLog("Failed to start Village game. Spawn or meeting location are not setup.");
+            return;
+        }
+
+        if (this.isGameInProgress()) {
+            Utils.verboseLog("Failed to start Village game. Game already in progress.");
+            return;
+        }
+
+        this.setGameStatus(Status.PRE_GAME);
+        Utils.verboseLog("Starting Village game. In pre-game.");
+
+        List<Player> players = new ArrayList<>(Bukkit.getOnlinePlayers());
+        Collections.shuffle(players);
+        List<Player> selected = players.subList(0, Math.min(getMobCount(), players.size()));
+        for (Player p : players) {
+            if (selected.contains(p)) {
+                Utils.verbosePlayerLog(p, "Selected as a mob.");
+
+                p.sendTitle(Utils.formatText("&c&lMOB"),
+                        Utils.formatText("You are a &c&lMob&r. Kill all &a&lVillagers&r to win!"), 20, 80, 20);
+                this.setPlayerRole(p.getUniqueId(), Role.MOB);
+                
+                ItemStack knife = new ItemStack(Material.NETHERITE_SWORD, 1);
+                ItemMeta knifeMeta = knife.getItemMeta();
+                knifeMeta.setDisplayName(Utils.formatText("&lKNIFE"));
+                knife.setItemMeta(knifeMeta);
+
+                p.getInventory().addItem(knife);
+            } else {
+                Utils.verbosePlayerLog(p, "Selected as a villager.");
+
+                p.sendTitle(Utils.formatText("&a&lVILLAGER"),
+                        Utils.formatText("You are a &a&lVillager&r. Complete your tasks and evict the &c&lMobs&r!"), 20, 80, 20);
+                p.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 10_000_000, 255, false, false, false));
+                this.setPlayerRole(p.getUniqueId(), Role.VILLAGER);
+            }
+
+            p.teleport(this.getSpawnLocation());
+            Utils.verbosePlayerLog(p, "Readied and teleported to spawn.");
+        }
+
+        this.setGameStatus(Status.PLAYING);
+        Utils.verboseLog("Started Village game. Playing.");
+    }
+
+    public void end() {
+        if (!this.isGameInProgress()) {
+            Utils.verboseLog("Failed to end Village game. No game in progress.");
+            return;
+        }
+    }
+
+    public void setPlayerRole(UUID uuid, Role role) {
+        this.playerRoles.put(uuid, role);
+    }
+
+    public Role getPlayerRole(UUID uuid) {
+        return this.playerRoles.get(uuid);
     }
 
     /**

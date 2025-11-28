@@ -24,3 +24,49 @@ Similar to Among Us, Village does have tasks for the Villagers to do; however, t
 
 There are currently three different types of tasks: math (simple equations you need to answer correctly in a time limit), craft (given materials and must craft a specific item), trivia (both general and Minecraft related), and custom (you are able to create your own questions/answers).
 
+## Features
+
+Village is full of features to ensure that gameplay is as smooth as possible
+
+### Editor
+
+Before playing Village, you'll want to have a map you can play in. The Village Editor allows
+server operators to place tasks, create and link vents together, and similar actions.
+
+These editors can be accessed via the `/village task` and `/village vent` commands.
+
+To exit the editor, simply use right click the exit tool or use the command `/village no-edit`.
+
+### Tasks
+
+As mentioned before, there are tasks in Village. These are no necessary to gameplay and do not provide a win condition; however, if there are tasks and all of them are completed, the Villagers will receive compasses that point to closest Mob.
+
+The generic tasks provided to are math (represented by a smithing table), trivia (represented by a lectern), and crafting (represented and uses a crafting table).
+
+#### Math Task
+
+A math task consists of two numbers, a and b, and a operand (e.g. +, -, *). The Villager will be
+asked to solve a random equation made up of two numbers (-10, 10) and one of the three operators (division isn't included because rounding feels unfair).
+
+Example: `What is -9 * 5?` The Villager will then type the answer in chat (not shown)
+
+#### Trivia Task
+
+A trivia task is a simple trivia question relating to general knowledge and Minecraft. General knowledge is a pretty subjective category, so I focused on Minecraft more, but hopefully it's fine.
+
+Example: `Do pigs fly (yes/no)?` The Villager will then type the answer in chat (not shown)
+
+#### Craft Task
+
+A craft task requires the Villager to craft a specified item. They are given the required materials to craft the item.
+
+Example: `Craft: DIAMOND HOE` The Villager will craft a diamond hoe in any crafting table
+
+#### Custom Task
+
+A custom task is something server operators can add to Village. They are just custom versions
+of the three generic tasks but can be made to be whatever you want.
+
+### Debugging
+
+Although a "secondary" feature, Village does offer a developer mode and verbose loggin with it's config. Developer mode will ignore certain checks and similar things that would otherwise interfere with testing, make sure this is disabled if you just want to create and play Village. Verbose logging logs a large majority of interactions and things realting to Village, can be useful for debugging and knowing what's going on in-game. 

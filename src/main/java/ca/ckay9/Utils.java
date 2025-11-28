@@ -22,4 +22,12 @@ public class Utils {
         Utils.getPlugin().getLogger()
                 .info("Player Log: " + player.getName() + " (" + player.getUniqueId().toString() + ") -> " + message);
     }
+
+    public static void verboseLog(String message) {
+        if (!Village.verboseLogging()) {
+            return;
+        }
+
+        Utils.getPlugin().getLogger().info("Log -> " + message);
+    }
 }
