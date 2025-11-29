@@ -31,9 +31,6 @@ public class PlayerMove implements Listener {
         if (to == null)
             return;
 
-        player.setAllowFlight(true);
-        player.setFlying(true);
-
         float yaw = to.getYaw();
         float pitch = to.getPitch();
 

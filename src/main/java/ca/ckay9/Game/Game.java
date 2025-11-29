@@ -385,6 +385,9 @@ public class Game {
             playerLoc.add(x, 0, z);
             p.teleport(playerLoc);
             i++;
+
+            p.setAllowFlight(true);
+            p.setFlying(true);
         }
     }
 
@@ -397,6 +400,11 @@ public class Game {
         this.setGameStatus(Status.VOTING);
         Bukkit.broadcastMessage(Utils.formatText("&b&l[MEETING]&r&b Voting started."));
         Utils.verboseLog("Started voting.");
+
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            p.setAllowFlight(false);
+            p.setFlying(false);
+        }
     }
 
     /**
@@ -656,6 +664,21 @@ public class Game {
     public boolean isPlayerVillager(Player player) {
         Role role = this.playerRoles.get(player.getUniqueId());
         return (role == null || role == Role.VILLAGER || role == Role.DETECTIVE || role == Role.MEDIC);
+    }
+
+    /**
+     * Attempts to find the current vent the mob is in
+     * @param mob Who to check
+     * @return The vent object if they are inside it, otherwise null
+     */
+    public Vent getVentMobIsIn(Player mob) {
+        for (Vent vent : this.getMobVents()) {
+            if (vent.getMobsInside().contains(mob.getUniqueId())) {
+                return vent;
+            }
+        }
+
+        return null;
     }
 
     /**

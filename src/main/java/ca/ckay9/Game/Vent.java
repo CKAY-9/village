@@ -1,9 +1,12 @@
 package ca.ckay9.Game;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -15,15 +18,34 @@ import ca.ckay9.Utils;
 public class Vent {
     private Block block;
     private ArrayList<Vent> connectedVents;
+    private HashSet<UUID> mobsInside;
 
     public Vent(Block block) {
         this.block = block;
         this.connectedVents = new ArrayList<>();
+        this.mobsInside = new HashSet<>();
     }
 
     public Vent(Block block, ArrayList<Vent> connectedVents) {
         this.block = block;
         this.connectedVents = connectedVents;
+        this.mobsInside = new HashSet<>();
+    }
+
+    public HashSet<UUID> getMobsInside() {
+        return this.mobsInside;
+    }
+
+    public void setMobsInside(HashSet<UUID> set) {
+        this.mobsInside = set;
+    }
+
+    public void addMobInside(UUID uuid) {
+        this.getMobsInside().add(uuid);
+    }
+
+    public void removeMobInside(UUID uuid) {
+        this.getMobsInside().remove(uuid);
     }
 
     public void openVentConnectionsMenu(Player player) {
@@ -39,8 +61,13 @@ public class Vent {
             menu.setItem(i, ventStack);
         }
 
+        ItemStack exitVentSystem = new ItemStack(Material.BARRIER, 1);
+        ItemMeta exitMeta = exitVentSystem.getItemMeta();
+        exitMeta.setDisplayName(Utils.formatText("&c&lEXIT"));
+        exitVentSystem.setItemMeta(exitMeta);
+        menu.setItem(18, exitVentSystem);
         
-
+        player.playSound(player.getLocation(), Sound.BLOCK_IRON_TRAPDOOR_OPEN, 5, 0);
         player.closeInventory();
         player.openInventory(menu);
     }
