@@ -51,7 +51,7 @@ public class VillageCommand implements CommandExecutor {
             return false;
         }
 
-        if (player.getGameMode() != GameMode.CREATIVE) {
+        if (player.getGameMode() != GameMode.CREATIVE && !args[0].equalsIgnoreCase("end")) {
             player.sendMessage(
                     Utils.formatText("&c&l[Village]&r&c You need to be in creative to use this command"));
             return false;

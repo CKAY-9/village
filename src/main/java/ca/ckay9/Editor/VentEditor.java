@@ -3,6 +3,7 @@ package ca.ckay9.Editor;
 import java.util.HashMap;
 import java.util.UUID;
 
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -49,6 +50,8 @@ public class VentEditor implements Listener {
         Vent newVent = new Vent(ventBlock);
         this.game.addMobVent(newVent);
 
+        Location location = ventBlock.getLocation();
+        Utils.verbosePlayerLog(player, "Created new vent at position " + location.getBlockX() + ", " + location.getBlockY() + ", " + location.getBlockZ());
         player.sendMessage(Utils
                 .formatText("&a&l[Village]&r&a Created new vent! Use can now use the link and destroy tool on it."));
     }
@@ -90,10 +93,12 @@ public class VentEditor implements Listener {
             target.addConnectedVent(existingLinkAttempt);
             existingLinkAttempt.addConnectedVent(target);
             this.ventLinks.remove(player.getUniqueId());
+            Utils.verbosePlayerLog(player, "Linked two vents together.");
             player.sendMessage(Utils.formatText("&a&l[Village]&r&a Linked vents!"));
         } else {
             // start
             this.ventLinks.put(player.getUniqueId(), target);
+             Utils.verbosePlayerLog(player, "Initialized vent link.");
             player.sendMessage(Utils
                     .formatText("&a&l[Village]&r&a Initialized link! Right click another vent with the tool to link."));
         }

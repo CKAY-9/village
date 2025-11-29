@@ -1,5 +1,6 @@
 package ca.ckay9.Editor;
 
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -56,6 +57,8 @@ public class TaskEditor implements Listener {
         }
 
         this.game.addVillagerTask(task);
+        Location location = block.getLocation();
+        Utils.verbosePlayerLog(player, "Created new task at position " + location.getBlockX() + ", " + location.getBlockY() + ", " + location.getBlockZ());
         player.sendMessage(Utils
                 .formatText("&a&l[Village]&r&a Created new task! Villagers will now be able to complete this"));
     }
