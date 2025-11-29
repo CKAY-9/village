@@ -1,4 +1,6 @@
-# Village
+<div align="center">
+    <img src="./assets/icon.png" width=250 height=250 />
+</div>
 
 A Werewolf inspired deduction gamemode in Minecraft.
 
