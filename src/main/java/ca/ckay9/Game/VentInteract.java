@@ -60,6 +60,8 @@ public class VentInteract implements Listener {
                     break;
                 }
             }
+
+            currentVent.removeMobInside(player.getUniqueId());
             player.closeInventory();
             return;
         }
