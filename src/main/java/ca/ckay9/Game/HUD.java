@@ -58,7 +58,26 @@ public class HUD {
 
         roleText.setScore(score--);
 
-        Score completionText = objective.getScore(Utils.formatText("&8Tasks: &a&l" + this.game.getCompletedTaskPercent() + "%"));
+        if (!this.game.isPlayerVillager(player)) {
+            Long cooldown = this.game.getKillCooldowns().get(player.getUniqueId());
+            if (cooldown == null) {
+                cooldown = 0L;
+                this.game.addKillCooldown(player.getUniqueId(), 0L);
+            }
+
+            long inSeconds = Math.max(0, Math.round(cooldown / 20));
+            Score cooldownText = objective
+                    .getScore(Utils.formatText("&8Kill Cooldown: &c&l" + inSeconds + "s"));
+            if (inSeconds <= 0) {
+                cooldownText = objective
+                        .getScore(Utils.formatText("&c&lKILL READY!"));
+            }
+
+            cooldownText.setScore(score--);
+        }
+
+        Score completionText = objective
+                .getScore(Utils.formatText("&8Tasks: &a&l" + this.game.getCompletedTaskPercent() + "%"));
         completionText.setScore(score--);
 
         player.setScoreboard(board);

@@ -15,6 +15,7 @@ import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.CompassMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.potion.PotionEffect;
@@ -39,6 +40,9 @@ public class Game {
                                // getMobCount() and setMobCount())
     private GameLoop gameLoop; // the game loop instance
     private int gameLoopID; // ID to bukkit runnable
+    private boolean completedAllTasks;
+    private HashMap<UUID, Long> killCooldowns;
+    private long killCooldown;
 
     public Game(Village village) {
         this.village = village;
@@ -54,10 +58,39 @@ public class Game {
         this.tasksPerVillager = 1;
         this.gameLoop = null;
         this.gameLoopID = -1;
+        this.completedAllTasks = false;
+        this.killCooldowns = new HashMap<>();
+        this.killCooldown = 600L;
 
         PluginManager manager = village.getServer().getPluginManager();
         manager.registerEvents(new VentInteract(this), village);
         manager.registerEvents(new VillagerTaskInteract(this), village);
+        manager.registerEvents(new PlayerDamage(this), village);
+        manager.registerEvents(new BodyInteract(this), village);
+    }
+
+    /**
+     * @param cooldownInTicks How long Mobs have to wait in-between kills. Given in
+     *                        ticks (1sec = 20ticks)
+     */
+    public void setKillCooldown(long cooldownInTicks) {
+        this.killCooldown = cooldownInTicks;
+    }
+
+    public long getKillCooldown() {
+        return this.killCooldown;
+    }
+
+    public HashMap<UUID, Long> getKillCooldowns() {
+        return this.killCooldowns;
+    }
+
+    public void setKillCooldowns(HashMap<UUID, Long> killCooldowns) {
+        this.killCooldowns = killCooldowns;
+    }
+
+    public void addKillCooldown(UUID uuid, long cooldownInTicks) {
+        this.killCooldowns.put(uuid, cooldownInTicks);
     }
 
     public HashMap<UUID, CraftTaskProgress> getCraftTaskExpectedResults() {
@@ -96,6 +129,14 @@ public class Game {
         return Bukkit.getOnlinePlayers().size() - this.getVillagerCount();
     }
 
+    public boolean hasCompletedAllTasks() {
+        return this.completedAllTasks;
+    }
+
+    public void setCompletedAllTasks(boolean value) {
+        this.completedAllTasks = value;
+    }
+
     /**
      * This works by changing villager count to players - value
      * 
@@ -103,6 +144,10 @@ public class Game {
      */
     public void setMobCount(int value) {
         this.villagerCount = Bukkit.getOnlinePlayers().size() - value;
+    }
+
+    public boolean isPlayerDead(Player player) {
+        return player.getGameMode() == GameMode.SPECTATOR;
     }
 
     /**
@@ -127,15 +172,6 @@ public class Game {
         }
 
         this.tasksPerVillager = value;
-    }
-
-    /**
-     * 
-     * @return The fraction of tasks that have been completed. Double between 0 and
-     *         1
-     */
-    public double getTaskCompletion() {
-        return this.getAmountOfCompletedTasks() / (tasksPerVillager * villagerCount);
     }
 
     /**
@@ -201,6 +237,30 @@ public class Game {
         player.getInventory().addItem(knife);
         player.setGameMode(GameMode.ADVENTURE);
         player.teleport(this.getSpawnLocation());
+    }
+
+    /**
+     * Starts a meeting by teleporting everyone to the meeting location
+     * 
+     * @param caller Who initiated the meeting
+     * @param reason Why the meeting was started
+     */
+    public void startDiscussion(Player caller, String reason) {
+        this.setGameStatus(Status.DISCUSSION);
+
+        double increment = (Math.PI * 2) / Bukkit.getOnlinePlayers().size();
+        long distance = 5;
+        int i = 0;
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            p.sendTitle(Utils.formatText("&b&lMEETING"),
+                    Utils.formatText("Called by &a&l" + caller.getName() + "&r. " + reason), 20,
+                    80, 20);
+
+            double x = Math.cos(increment * i) * distance;
+            double z = Math.sin(increment * i) * distance;
+            p.teleport(this.getMeetingLocation().clone().add(x, 0, z));
+            i++;
+        }
     }
 
     /**
@@ -315,11 +375,33 @@ public class Game {
         return this.playerRoles.get(uuid);
     }
 
+    public void giveVillagerMobCompass(Player player) {
+        // compasses will be updated in game loop to point
+        ItemStack compass = new ItemStack(Material.COMPASS);
+        CompassMeta meta = (CompassMeta) compass.getItemMeta();
+        meta.setDisplayName(Utils.formatText("&c&lMob&r&c Locator"));
+        meta.setUnbreakable(true);
+        compass.setItemMeta(meta);
+
+        player.getInventory().addItem(compass);
+    }
+
     public double getCompletedTaskPercent() {
         int numerator = this.getAmountOfCompletedTasks();
         double denominator = Math.max(this.getVillagerCount(), 1) * Math.max(this.getTasksPerVillager(), 1);
+        double result = Math.floor((numerator / denominator) * 100);
 
-        return Math.floor((numerator / denominator) * 100);
+        if (result >= 100 && !this.hasCompletedAllTasks()) {
+            this.setCompletedAllTasks(true);
+
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                if (this.isPlayerVillager(p)) {
+                    giveVillagerMobCompass(p);
+                }
+            }
+        }
+
+        return result;
     }
 
     /**
