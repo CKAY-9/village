@@ -7,6 +7,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 
 import ca.ckay9.Utils;
@@ -21,6 +22,29 @@ public class TaskEditor implements Listener {
     public TaskEditor(Editor editor, Game game) {
         this.editor = editor;
         this.game = game;
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onBlockBreak(BlockBreakEvent event) {
+        Block block = event.getBlock();
+        VillagerTask task = game.getTaskAtLocation(block.getLocation());
+        if (task == null) {
+            return;
+        }
+
+        Player player = event.getPlayer();
+        EditorState state = this.editor.getEditorStates().get(player.getUniqueId());
+        if (state == null || state != EditorState.TASK) {
+            event.setCancelled(true);
+            return;
+        }
+
+        this.game.removeVillagerTask(task);
+        Location location = block.getLocation();
+        Utils.verbosePlayerLog(player, "Removed vent at position " + location.getBlockX() + ", " + location.getBlockY()
+                + ", " + location.getBlockZ());
+        player.sendMessage(Utils
+                .formatText("&a&l[Village]&r&a Removed task."));
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -54,11 +78,15 @@ public class TaskEditor implements Listener {
         } else if (blockMat == Material.ENCHANTING_TABLE) {
             // custom task
             task.setTaskType(VillagerTaskType.CUSTOM);
+        } else {
+            event.setCancelled(true);
+            return;
         }
 
         this.game.addVillagerTask(task);
         Location location = block.getLocation();
-        Utils.verbosePlayerLog(player, "Created new task at position " + location.getBlockX() + ", " + location.getBlockY() + ", " + location.getBlockZ());
+        Utils.verbosePlayerLog(player, "Created new task at position " + location.getBlockX() + ", "
+                + location.getBlockY() + ", " + location.getBlockZ());
         player.sendMessage(Utils
                 .formatText("&a&l[Village]&r&a Created new task! Villagers will now be able to complete this"));
     }

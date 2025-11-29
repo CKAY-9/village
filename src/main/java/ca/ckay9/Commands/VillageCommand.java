@@ -1,6 +1,6 @@
 package ca.ckay9.Commands;
 
-import org.bukkit.GameMode;
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -30,6 +30,32 @@ public class VillageCommand implements CommandExecutor {
                         "&a&l[Village]&r&a Updated meeting location. Players will now spawn around this location when a meeting starts."));
     }
 
+    private void handleForceVillager(Player player, String targetName) {
+        if (!this.village.getGame().isGameInProgress()) {
+            return;
+        }
+        
+        Player targetPlayer = Bukkit.getPlayer(targetName);
+        if (targetPlayer == null) {
+            return;
+        }
+        
+        this.village.getGame().setPlayerToVillager(targetPlayer);
+    }
+
+    private void handleForceMob(Player player, String targetName) {
+        if (!this.village.getGame().isGameInProgress()) {
+            return;
+        }
+        
+        Player targetPlayer = Bukkit.getPlayer(targetName);
+        if (targetPlayer == null) {
+            return;
+        }
+        
+        this.village.getGame().setPlayerToMob(targetPlayer);
+    }
+
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player)) {
@@ -48,12 +74,6 @@ public class VillageCommand implements CommandExecutor {
             player.sendMessage(
                     Utils.formatText(
                             "&a&l[Village]&r&a Command usage: /village [vent/task/meeting/spawn/start/end/no-edit]"));
-            return false;
-        }
-
-        if (player.getGameMode() != GameMode.CREATIVE && !args[0].equalsIgnoreCase("end")) {
-            player.sendMessage(
-                    Utils.formatText("&c&l[Village]&r&c You need to be in creative to use this command"));
             return false;
         }
 
@@ -79,6 +99,12 @@ public class VillageCommand implements CommandExecutor {
                 break;
             case "no-edit":
                 this.village.getEditor().exitEditor(player);    
+                break;
+            case "force-villager":
+                handleForceVillager(player, args[1].strip());
+                break;
+            case "force-mob":
+                handleForceMob(player, args[1].strip());
                 break;
             default:
                 break;

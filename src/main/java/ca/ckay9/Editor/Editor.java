@@ -122,8 +122,6 @@ public class Editor {
     public void exitEditor(Player player) {
         this.getEditorStates().put(player.getUniqueId(), EditorState.NONE);
         player.getInventory().clear();
-
-        village.getEditor().addEditor(player.getUniqueId(), EditorState.VENT);
         player.sendMessage(Utils
                 .formatText(
                         "&a&l[Village]&r&a Editor disabled."));

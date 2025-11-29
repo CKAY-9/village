@@ -38,6 +38,11 @@ public class Storage {
                 config.setInlineComments("debug.verboseLogging", Collections.singletonList("Logs a lot. Recommend having disabled but can be useful."));
             }
 
+            if (!config.isSet("tasks.doThemAll")) {
+                config.set("tasks.doThemAll", true);
+                config.setInlineComments("tasks.doThemAll", Collections.singletonList("Every villager will have to do every task. This overrides any other values."));
+            }
+
             config.save(configFile);
         } catch (IOException ex) {
             Utils.getPlugin().getLogger().warning(ex.toString());

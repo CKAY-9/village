@@ -36,6 +36,8 @@ public class VillageCompletor implements TabCompleter {
                     options.add("no-edit");
                 } else {
                     options.add("end");
+                    options.add("force-villager");
+                    options.add("force-mob");
                 }
                 break;
             default:

@@ -58,8 +58,7 @@ public class HUD {
 
         roleText.setScore(score--);
 
-        double percent = Math.floor(this.game.getAmountOfCompletedTasks() * 100);
-        Score completionText = objective.getScore(Utils.formatText("&8Tasks: &a&l" + percent + "%"));
+        Score completionText = objective.getScore(Utils.formatText("&8Tasks: &a&l" + this.game.getCompletedTaskPercent() + "%"));
         completionText.setScore(score--);
 
         player.setScoreboard(board);

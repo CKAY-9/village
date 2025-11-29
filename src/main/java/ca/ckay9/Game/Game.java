@@ -1,5 +1,6 @@
 package ca.ckay9.Game;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -11,6 +12,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -18,6 +20,7 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
+import ca.ckay9.Storage;
 import ca.ckay9.Utils;
 import ca.ckay9.Village;
 
@@ -32,7 +35,8 @@ public class Game {
     private ArrayList<Vent> mobVents; // all created mob vents
     private Village village; // parent class
     private int tasksPerVillager; // how many tasks each villager has
-    private int villagerCount; // how many villagers there are, this is also used to calculate mobCount (see getMobCount() and setMobCount())
+    private int villagerCount; // how many villagers there are, this is also used to calculate mobCount (see
+                               // getMobCount() and setMobCount())
     private GameLoop gameLoop; // the game loop instance
     private int gameLoopID; // ID to bukkit runnable
 
@@ -92,6 +96,11 @@ public class Game {
         return Bukkit.getOnlinePlayers().size() - this.getVillagerCount();
     }
 
+    /**
+     * This works by changing villager count to players - value
+     * 
+     * @param value How many mobs should there be
+     */
     public void setMobCount(int value) {
         this.villagerCount = Bukkit.getOnlinePlayers().size() - value;
     }
@@ -145,13 +154,63 @@ public class Game {
         return total;
     }
 
+    public void setPlayerToVillager(Player player) {
+        player.getInventory().clear();
+        for (PotionEffect effect : player.getActivePotionEffects()) {
+            player.removePotionEffect(effect.getType());
+        }
+        player.setHealth(20);
+        player.setSaturation(20);
+
+        Utils.verbosePlayerLog(player, "Changed to villager.");
+        Collections.shuffle(this.getVillagerTasks());
+        List<VillagerTask> selectedTasks = this.getVillagerTasks().subList(0, this.getTasksPerVillager());
+        for (VillagerTask task : selectedTasks) {
+            task.addAssignedVillager(player.getUniqueId());
+        }
+
+        player.sendTitle(Utils.formatText("&a&lVILLAGER"),
+                Utils.formatText("You are a &a&lVillager&r. Complete your tasks and evict the &c&lMobs&r!"), 20,
+                80, 20);
+        player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 10_000_000, 255, false, false, false));
+        this.setPlayerRole(player.getUniqueId(), Role.VILLAGER);
+
+        player.setGameMode(GameMode.ADVENTURE);
+        player.teleport(this.getSpawnLocation());
+    }
+
+    public void setPlayerToMob(Player player) {
+        player.getInventory().clear();
+        for (PotionEffect effect : player.getActivePotionEffects()) {
+            player.removePotionEffect(effect.getType());
+        }
+        player.setHealth(20);
+        player.setSaturation(20);
+
+        Utils.verbosePlayerLog(player, "Changed to mob.");
+
+        player.sendTitle(Utils.formatText("&c&lMOB"),
+                Utils.formatText("You are a &c&lMob&r. Kill all &a&lVillagers&r to win!"), 20, 80, 20);
+        this.setPlayerRole(player.getUniqueId(), Role.MOB);
+
+        ItemStack knife = new ItemStack(Material.NETHERITE_SWORD, 1);
+        ItemMeta knifeMeta = knife.getItemMeta();
+        knifeMeta.setDisplayName(Utils.formatText("&lKNIFE"));
+        knife.setItemMeta(knifeMeta);
+
+        player.getInventory().addItem(knife);
+        player.setGameMode(GameMode.ADVENTURE);
+        player.teleport(this.getSpawnLocation());
+    }
+
     /**
      * Attempts to start a game of Village.
      * Can fail if locations aren't setup, no players, etc.
      */
     public void start() {
         // players check
-        if (Bukkit.getOnlinePlayers().size() <= 0) {
+        int onlinePlayerCount = Bukkit.getOnlinePlayers().size();
+        if (onlinePlayerCount <= 0) {
             Utils.verboseLog("Failed to start Village game. No online players.");
             return;
         }
@@ -167,6 +226,16 @@ public class Game {
             return;
         }
 
+        this.setVillagerCount(onlinePlayerCount);
+        int mobCount = Math.max(1, Math.floorDiv(onlinePlayerCount, 4));
+        this.setMobCount(mobCount); // will change villager count
+
+        if (Storage.config.getBoolean("tasks.doThemAll", true)) {
+            this.setTasksPerVillager(this.getVillagerTasks().size());
+        } else {
+            // TODO: get a provided amount.
+        }
+
         this.setGameStatus(Status.PRE_GAME);
         Utils.verboseLog("Starting Village game. In pre-game.");
 
@@ -175,39 +244,11 @@ public class Game {
         Collections.shuffle(players);
         List<Player> selected = players.subList(0, Math.min(getMobCount(), players.size()));
         for (Player p : players) {
-            p.getInventory().clear();
-            for (PotionEffect effect : p.getActivePotionEffects()) {
-                p.removePotionEffect(effect.getType());
-            }
-            p.setHealth(20);
-            p.setSaturation(20);
-
             if (selected.contains(p)) {
-                Utils.verbosePlayerLog(p, "Selected as a mob.");
-
-                p.sendTitle(Utils.formatText("&c&lMOB"),
-                        Utils.formatText("You are a &c&lMob&r. Kill all &a&lVillagers&r to win!"), 20, 80, 20);
-                this.setPlayerRole(p.getUniqueId(), Role.MOB);
-
-                ItemStack knife = new ItemStack(Material.NETHERITE_SWORD, 1);
-                ItemMeta knifeMeta = knife.getItemMeta();
-                knifeMeta.setDisplayName(Utils.formatText("&lKNIFE"));
-                knife.setItemMeta(knifeMeta);
-
-                p.getInventory().addItem(knife);
+                setPlayerToMob(p);
             } else {
-                Utils.verbosePlayerLog(p, "Selected as a villager.");
-
-                p.sendTitle(Utils.formatText("&a&lVILLAGER"),
-                        Utils.formatText("You are a &a&lVillager&r. Complete your tasks and evict the &c&lMobs&r!"), 20,
-                        80, 20);
-                p.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 10_000_000, 255, false, false, false));
-                this.setPlayerRole(p.getUniqueId(), Role.VILLAGER);
+                setPlayerToVillager(p);
             }
-
-            p.setGameMode(GameMode.ADVENTURE);
-            p.teleport(this.getSpawnLocation());
-            Utils.verbosePlayerLog(p, "Readied and teleported to spawn.");
         }
 
         GameLoop loop = new GameLoop(this);
@@ -236,6 +277,11 @@ public class Game {
         this.chatTaskExpectedResults.clear();
         this.craftTaskExpectedResults.clear();
         Utils.verboseLog("Cleared expected result maps.");
+
+        for (VillagerTask task : this.getVillagerTasks()) {
+            task.getAssignedVillagers().clear();
+        }
+        Utils.verboseLog("Cleared task data.");
 
         // cleanup players
         List<Player> players = new ArrayList<>(Bukkit.getOnlinePlayers());
@@ -267,6 +313,13 @@ public class Game {
 
     public Role getPlayerRole(UUID uuid) {
         return this.playerRoles.get(uuid);
+    }
+
+    public double getCompletedTaskPercent() {
+        int numerator = this.getAmountOfCompletedTasks();
+        double denominator = Math.max(this.getVillagerCount(), 1) * Math.max(this.getTasksPerVillager(), 1);
+
+        return Math.floor((numerator / denominator) * 100);
     }
 
     /**
@@ -363,6 +416,10 @@ public class Game {
         this.villagerTasks.add(task);
     }
 
+    public void removeVillagerTask(VillagerTask task) {
+        this.villagerTasks.remove(task);
+    }
+
     public ArrayList<Vent> getMobVents() {
         return this.mobVents;
     }
@@ -375,13 +432,57 @@ public class Game {
         this.mobVents.add(mobVent);
     }
 
+    public void removeMobVent(Vent mobVent) {
+        this.mobVents.remove(mobVent);
+    }
+
     /**
      * Will attempt to save the current game object to the current world's config
      * section
      * 
      * @return True if saved, false if failed
      */
-    public boolean saveCurrentGameConfig() {
+    public boolean saveCurrentGameConfig(String worldName) {
+        try {
+            String root = "worlds. " + worldName + ".";
+            int i = 0;
+
+            String tasks = root + "tasks.";
+            for (VillagerTask task : this.getVillagerTasks()) {
+                Storage.worldsData.set(tasks + "task" + i + ".type", task.getTaskType().toString());
+
+                Location loc = task.getBlock().getLocation();
+                Storage.worldsData.set(tasks + "task" + i + ".coords.x", loc.getBlockX());
+                Storage.worldsData.set(tasks + "task" + i + ".coords.y", loc.getBlockY());
+                Storage.worldsData.set(tasks + "task" + i + ".coords.z", loc.getBlockZ());
+                i++;
+            }
+
+            i = 0;
+
+            String meetingLoc = root + "meeting.";
+            Storage.worldsData.set(meetingLoc + "x", this.getMeetingLocation().getBlockX());
+            Storage.worldsData.set(meetingLoc + "x", this.getMeetingLocation().getBlockY());
+            Storage.worldsData.set(meetingLoc + "x", this.getMeetingLocation().getBlockZ());
+
+            String spawnLoc = root + "spawn.";
+            Storage.worldsData.set(spawnLoc + "x", this.getSpawnLocation().getBlockX());
+            Storage.worldsData.set(spawnLoc + "x", this.getSpawnLocation().getBlockY());
+            Storage.worldsData.set(spawnLoc + "x", this.getSpawnLocation().getBlockZ());
+
+            Storage.worldsData.save(Storage.worldsFile);
+        } catch (IOException ex) {
+            Utils.getPlugin().getLogger().warning(ex.toString());
+        }
+
         return true;
+    }
+
+    public void loadFromSaveID(String worldName) {
+        ConfigurationSection section = Storage.worldsData.getConfigurationSection("worlds." + worldName);
+        if (section == null) {
+            return;
+        }
+
     }
 }

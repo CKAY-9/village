@@ -64,4 +64,8 @@ public class Vent {
     public void addConnectedVent(Vent vent) {
         this.connectedVents.add(vent);
     }
+
+    public void removeConnectedVent(Vent vent) {
+        this.connectedVents.remove(vent);
+    }
 }
