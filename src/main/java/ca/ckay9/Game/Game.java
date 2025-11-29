@@ -12,6 +12,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
@@ -52,7 +54,7 @@ public class Game {
     private long meetingButtonCooldown; // how long do you have to wait before being able to use the meeting button in
                                         // ticks
     private HashMap<UUID, Integer> buttonUses; // how many times a player has pressed the meeting button
-    private long maxButtonUses; // how many times can each player use the button
+    private int maxButtonUses; // how many times can each player use the button
 
     public Game(Village village) {
         this.village = village;
@@ -71,11 +73,11 @@ public class Game {
         this.gameLoopID = -1;
         this.completedAllTasks = false;
         this.killCooldowns = new HashMap<>();
-        this.killCooldown = 600L;
-        this.votingTime = 600L;
-        this.discussionTime = 900L;
+        this.killCooldown = Utils.secondsToTicks(15);
+        this.votingTime = Utils.secondsToTicks(10);
+        this.discussionTime = Utils.secondsToTicks(10);
         this.votes = new HashMap<>();
-        this.meetingButtonCooldown = 300;
+        this.meetingButtonCooldown = Utils.secondsToTicks(10);
         this.maxButtonUses = 1;
         this.buttonUses = new HashMap<>();
 
@@ -172,8 +174,13 @@ public class Game {
             return;
         }
 
-        arr.remove(voterToRemove);
-        this.getVotes().put(uuid, arr);
+        if (arr.remove(voterToRemove)) {
+            this.getVotes().put(uuid, arr);
+        }
+
+        if (arr.size() <= 0) {
+            this.getVotes().remove(uuid);
+        }
     }
 
     public void clearVotes() {
@@ -238,6 +245,10 @@ public class Game {
 
     public void setCompletedAllTasks(boolean value) {
         this.completedAllTasks = value;
+    }
+
+    public void setMaxMeetingButtonUses(int value) {
+        this.maxButtonUses = value;
     }
 
     /**
@@ -668,6 +679,7 @@ public class Game {
 
     /**
      * Attempts to find the current vent the mob is in
+     * 
      * @param mob Who to check
      * @return The vent object if they are inside it, otherwise null
      */
@@ -739,10 +751,11 @@ public class Game {
         ArmorStand stand = this.getMeetingButton();
         Location standLoc = location.clone();
         standLoc.add(0, -1.7f, 0);
-        if (stand == null || stand.isDead()) {
-            stand = (ArmorStand) location.getWorld().spawnEntity(standLoc, EntityType.ARMOR_STAND);
+        if (stand != null) {
+            stand.remove();
         }
 
+        stand = (ArmorStand) location.getWorld().spawnEntity(standLoc, EntityType.ARMOR_STAND);
         stand.setCustomNameVisible(true);
         stand.setCustomName(Utils.formatText("&c&lEMERGENCY MEETING"));
         stand.teleport(standLoc);
@@ -763,12 +776,19 @@ public class Game {
     public long getMeetingButtonCooldown() {
         return this.meetingButtonCooldown;
     }
+    
+    /**
+     * @param ticks The new cooldown in ticks
+     */
+    public void setMeetingButtonCooldown(long ticks) {
+        this.meetingButtonCooldown = ticks;
+    }
 
     public HashMap<UUID, Integer> getMeetingUses() {
         return this.buttonUses;
     }
 
-    public long getMaxMeetingButtonUses() {
+    public int getMaxMeetingButtonUses() {
         return this.maxButtonUses;
     }
 
@@ -822,35 +842,74 @@ public class Game {
      * 
      * @return True if saved, false if failed
      */
-    public boolean saveCurrentGameConfig(String worldName) {
+    public boolean saveCurrentGameConfig(String id) {
         try {
-            String root = "worlds. " + worldName + ".";
+            Utils.verboseLog("Saving world config...");
+            String root = "saved." + id + ".";
+            
+            Utils.verboseLog("Saving gameplay values...");
+            Storage.worldsData.set(root + "tasksNeeded", this.getTasksPerVillager());
+            Storage.worldsData.set(root + "killCooldown", this.getKillCooldown());
+            Storage.worldsData.set(root + "discussionTime", this.getDiscussionTime());
+            Storage.worldsData.set(root + "votingTime", this.getVotingTime());
+            Storage.worldsData.set(root + "buttonTime", this.getMeetingButtonCooldown());
+            Storage.worldsData.set(root + "maxButtons", this.getMaxMeetingButtonUses());
+            Utils.verboseLog("Saved gameplay values!");
+            
             int i = 0;
-
             String tasks = root + "tasks.";
             for (VillagerTask task : this.getVillagerTasks()) {
                 Storage.worldsData.set(tasks + "task" + i + ".type", task.getTaskType().toString());
 
                 Location loc = task.getBlock().getLocation();
-                Storage.worldsData.set(tasks + "task" + i + ".coords.x", loc.getBlockX());
-                Storage.worldsData.set(tasks + "task" + i + ".coords.y", loc.getBlockY());
-                Storage.worldsData.set(tasks + "task" + i + ".coords.z", loc.getBlockZ());
+                Storage.worldsData.set(tasks + "task" + i + ".x", loc.getBlockX());
+                Storage.worldsData.set(tasks + "task" + i + ".y", loc.getBlockY());
+                Storage.worldsData.set(tasks + "task" + i + ".z", loc.getBlockZ());
                 i++;
+
+                Utils.verboseLog("Saved task.");
             }
 
             i = 0;
+            String vents = root + "vents.";
+            for (Vent vent : this.getMobVents()) {
+                Location loc = vent.getBlock().getLocation();
+                Storage.worldsData.set(vents + i + ".x", loc.getX());
+                Storage.worldsData.set(vents + i + ".y", loc.getY());
+                Storage.worldsData.set(vents + i + ".z", loc.getZ());
 
-            String meetingLoc = root + "meeting.";
-            Storage.worldsData.set(meetingLoc + "x", this.getMeetingLocation().getBlockX());
-            Storage.worldsData.set(meetingLoc + "x", this.getMeetingLocation().getBlockY());
-            Storage.worldsData.set(meetingLoc + "x", this.getMeetingLocation().getBlockZ());
+                int j = 0;
+                for (Vent connectedVent : vent.getConnectedVents()) {
+                    Location l = connectedVent.getBlock().getLocation();
+                    Storage.worldsData.set(vents + i + ".vents." + j + ".x", l.getX());
+                    Storage.worldsData.set(vents + i + ".vents." + j + ".y", l.getY());
+                    Storage.worldsData.set(vents + i + ".vents." + j + ".z", l.getZ());
+                }
 
-            String spawnLoc = root + "spawn.";
-            Storage.worldsData.set(spawnLoc + "x", this.getSpawnLocation().getBlockX());
-            Storage.worldsData.set(spawnLoc + "x", this.getSpawnLocation().getBlockY());
-            Storage.worldsData.set(spawnLoc + "x", this.getSpawnLocation().getBlockZ());
+                Utils.verboseLog("Saved vent.");
+                i++;
+            }
+
+            // meeting location
+            if (this.getMeetingLocation() != null) {
+                String meetingLoc = root + "meeting.";
+                Storage.worldsData.set(meetingLoc + "x", this.getMeetingLocation().getX());
+                Storage.worldsData.set(meetingLoc + "y", this.getMeetingLocation().getY());
+                Storage.worldsData.set(meetingLoc + "z", this.getMeetingLocation().getZ());
+                Utils.verboseLog("Saved meeting location.");
+            }
+
+            // spawn location
+            if (this.getSpawnLocation() != null) {
+                String spawnLoc = root + "spawn.";
+                Storage.worldsData.set(spawnLoc + "x", this.getSpawnLocation().getX());
+                Storage.worldsData.set(spawnLoc + "y", this.getSpawnLocation().getY());
+                Storage.worldsData.set(spawnLoc + "z", this.getSpawnLocation().getZ());
+                 Utils.verboseLog("Saved spawn location.");
+            }
 
             Storage.worldsData.save(Storage.worldsFile);
+            Utils.verboseLog("Saved world config!");
         } catch (IOException ex) {
             Utils.getPlugin().getLogger().warning(ex.toString());
         }
@@ -858,11 +917,114 @@ public class Game {
         return true;
     }
 
-    public void loadFromSaveID(String worldName) {
-        ConfigurationSection section = Storage.worldsData.getConfigurationSection("worlds." + worldName);
+    public void loadFromSaveID(World world, String id) {
+        ConfigurationSection section = Storage.worldsData.getConfigurationSection("saved." + id);
         if (section == null) {
             return;
         }
 
+        Utils.verboseLog("Loading gameplay values...");
+        this.setTasksPerVillager(section.getInt("tasksNeeded", this.getTasksPerVillager()));
+        this.setKillCooldown(section.getLong("killCooldown", this.getKillCooldown()));
+        this.setDiscussionTime(section.getLong("discussionTime", this.getDiscussionTime()));
+        this.setVotingTime(section.getLong("votingTime", this.getVotingTime()));
+        this.setMeetingButtonCooldown(section.getLong("buttonTime", this.getMeetingButtonCooldown()));
+        this.setMaxMeetingButtonUses(section.getInt("maxButtons", this.getMaxMeetingButtonUses()));
+        Utils.verboseLog("Loaded gameplay values!");
+
+        this.setSpawnLocation(new Location(
+                world,
+                section.getDouble("spawn.x", 0),
+                section.getDouble("spawn.y", 0), section.getDouble("spawn.z", 0)));
+        Utils.verboseLog("Loaded spawn location!");
+
+        this.setMeetingLocation(new Location(
+                world,
+                section.getDouble("meeting.x", 0),
+                section.getDouble("meeting.y", 0), section.getDouble("meeting.z", 0)));
+        Utils.verboseLog("Loaded meeting location!");
+
+        ConfigurationSection savedTasks = section.getConfigurationSection("tasks");
+        if (savedTasks != null) {
+            Utils.verboseLog("Loading saved tasks...");
+            for (String key : savedTasks.getKeys(false)) {
+                ConfigurationSection savedTask = savedTasks.getConfigurationSection(key);
+                if (savedTask == null) {
+                    continue;
+                }
+
+                Block block = world.getBlockAt((int) savedTask.getDouble("x", 0), (int) savedTask.getDouble("y", 0),
+                        (int) savedTask.getDouble("z", 0));
+                VillagerTask task = new VillagerTask(block);
+                task.setTaskType(VillagerTaskType.valueOf(savedTask.getString("type", "CRAFT")));
+                this.addVillagerTask(task);
+
+                Utils.verboseLog("Loaded saved " + savedTask.getString("type", "CRAFT") + " task at position "
+                        + block.getLocation().getBlockX() + ", " + block.getLocation().getBlockY() + ", "
+                        + block.getLocation().getBlockZ());
+            }
+            Utils.formatText("Loaded saved tasks!");
+        }
+
+        ConfigurationSection savedVents = section.getConfigurationSection("vents");
+        if (savedVents != null) {
+            Utils.verboseLog("Loading saved vents...");
+
+            // first load all vents
+            for (String k : savedVents.getKeys(false)) {
+                ConfigurationSection savedVent = savedVents.getConfigurationSection(k);
+                if (savedVent == null) {
+                    continue;
+                }
+
+                Block block = world.getBlockAt((int) savedVent.getDouble("x"), (int) savedVent.getDouble("y"),
+                        (int) savedVent.getDouble("z"));
+                block.setType(Material.IRON_TRAPDOOR);
+                Vent vent = new Vent(block);
+                this.addMobVent(vent);
+
+                Utils.verboseLog("Loaded saved vent at position " + block.getLocation().getBlockX() + ", "
+                        + block.getLocation().getBlockY() + ", " + block.getLocation().getBlockZ());
+            }
+
+            Utils.verboseLog("Loaded saved vents!");
+
+            Utils.verboseLog("Loading vent systems...");
+            // now link all vents
+            int i = 0;
+            for (String k : savedVents.getKeys(false)) {
+                ConfigurationSection savedVent = savedVents.getConfigurationSection(k);
+                if (savedVent == null) {
+                    continue;
+                }
+
+                ConfigurationSection linkedVents = savedVent.getConfigurationSection("vents");
+                if (linkedVents == null) {
+                    continue;
+                }
+
+                Vent thisVent = this.getMobVents().get(i);
+
+                // go through each connected vent
+                for (String j : linkedVents.getKeys(false)) {
+                    ConfigurationSection pos = linkedVents.getConfigurationSection(j);
+                    if (pos == null) {
+                        continue;
+                    }
+
+                    Location loc = new Location(world, (int) pos.getDouble("x"), (int) pos.getDouble("y"),
+                            (int) pos.getDouble("y"));
+                    Vent linkVent = this.getVentAtLocation(loc);
+                    if (linkVent == null) {
+                        continue;
+                    }
+
+                    thisVent.addConnectedVent(linkVent);
+                    linkVent.addConnectedVent(thisVent);
+                }
+            }
+
+            Utils.verboseLog("Loaded saved vent systems!");
+        }
     }
 }

@@ -48,9 +48,6 @@ public class VentInteract implements Listener {
         }
 
         int slot = event.getSlot();
-        if (currentVent.getConnectedVents().size() <= slot) {
-            return;
-        }
 
         // exit vent
         if (slot == EXIT_VENT_SLOT) {
@@ -63,6 +60,10 @@ public class VentInteract implements Listener {
 
             currentVent.removeMobInside(player.getUniqueId());
             player.closeInventory();
+            return;
+        }
+
+        if (currentVent.getConnectedVents().size() <= slot) {
             return;
         }
 
@@ -123,8 +124,6 @@ public class VentInteract implements Listener {
         if (vent == null) {
             return;
         }
-
-        player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 10_000_000, 255, false, false));
 
         vent.addMobInside(player.getUniqueId());
         vent.openVentConnectionsMenu(player);

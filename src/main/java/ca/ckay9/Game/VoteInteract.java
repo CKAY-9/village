@@ -46,7 +46,7 @@ public class VoteInteract implements Listener {
         UUID targetUUID = target.getUniqueId();
 
         if (this.game.hasAlreadyVotedForThisPlayer(targetUUID, playerUUID)) {
-            this.game.clearPreviousPlayerVotes(playerUUID);
+            this.game.removeVote(targetUUID, playerUUID);
             Utils.verbosePlayerLog(player,
                     "Removed their vote from player " + target.getName() + " (" + targetUUID + ")");
             player.sendMessage(Utils.formatText("&e&l[MEETING]&r&e You removed your vote from &l" + target.getName()));

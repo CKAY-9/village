@@ -235,5 +235,15 @@ public class VillagerTask {
      */
     public void setTaskType(VillagerTaskType taskType) {
         this.taskType = taskType;
+        
+        if (taskType == VillagerTaskType.CRAFT) {
+            this.getBlock().setType(Material.CRAFTING_TABLE);
+        } else if (taskType == VillagerTaskType.MATH) {
+            this.getBlock().setType(Material.SMITHING_TABLE);
+        } else if (taskType == VillagerTaskType.TRIVIA) {
+            this.getBlock().setType(Material.LECTERN);
+        } else if (taskType == VillagerTaskType.CUSTOM) {
+            this.getBlock().setType(Material.ENCHANTING_TABLE);
+        }
     }
 }

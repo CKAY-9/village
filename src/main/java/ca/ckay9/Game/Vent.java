@@ -12,6 +12,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 import ca.ckay9.Utils;
 
@@ -66,10 +68,12 @@ public class Vent {
         exitMeta.setDisplayName(Utils.formatText("&c&lEXIT"));
         exitVentSystem.setItemMeta(exitMeta);
         menu.setItem(18, exitVentSystem);
-        
+
         player.playSound(player.getLocation(), Sound.BLOCK_IRON_TRAPDOOR_OPEN, 5, 0);
         player.closeInventory();
         player.openInventory(menu);
+
+        player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 10_000_000, 1, false, false, false));
     }
 
     public Block getBlock() {

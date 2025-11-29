@@ -48,6 +48,17 @@ public class MeetingButtonInteract implements Listener {
             armorStand.setCustomName(Utils.formatText("&c&lEMERGENCY MEETING - READY"));
         }
 
+        // check usage
+        Integer uses = this.game.getMeetingUses().get(player.getUniqueId());
+        if (uses != null && uses > this.game.getMaxMeetingButtonUses()) {
+            return;
+        }
+
+        if (uses == null) {
+            uses = 0;
+        }
+        
+        this.game.getMeetingUses().put(player.getUniqueId(), uses++);
         this.game.startDiscussion(player, "Emergency Button");
     }
 }

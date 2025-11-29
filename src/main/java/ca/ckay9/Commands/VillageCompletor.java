@@ -34,6 +34,14 @@ public class VillageCompletor implements TabCompleter {
                     options.add("spawn");
                     options.add("start");
                     options.add("no-edit");
+                    options.add("save");
+                    options.add("load");
+                    options.add("tasks-needed");
+                    options.add("kill-cooldown");
+                    options.add("discussion-time");
+                    options.add("voting-time");
+                    options.add("button-time");
+                    options.add("max-button");
                 } else {
                     options.add("end");
                     options.add("force-villager");

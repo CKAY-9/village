@@ -34,12 +34,13 @@ public class VillageCommand implements CommandExecutor {
         if (!this.village.getGame().isGameInProgress()) {
             return;
         }
-        
+
         Player targetPlayer = Bukkit.getPlayer(targetName);
         if (targetPlayer == null) {
             return;
         }
-        
+
+        player.sendMessage(Utils.formatText("&a&l[Village]&r&a Forced " + targetName + " to Villagers."));
         this.village.getGame().setPlayerToVillager(targetPlayer);
     }
 
@@ -47,12 +48,13 @@ public class VillageCommand implements CommandExecutor {
         if (!this.village.getGame().isGameInProgress()) {
             return;
         }
-        
+
         Player targetPlayer = Bukkit.getPlayer(targetName);
         if (targetPlayer == null) {
             return;
         }
-        
+
+        player.sendMessage(Utils.formatText("&a&l[Village]&r&a Forced " + targetName + " to Mobs."));
         this.village.getGame().setPlayerToMob(targetPlayer);
     }
 
@@ -71,9 +73,35 @@ public class VillageCommand implements CommandExecutor {
         }
 
         if (args.length <= 0) {
+            player.sendMessage(Utils.formatText(
+                    "&a&l[Village]&r&a Command usage: /village [subcommand] [arguments]"));
+            player.sendMessage(Utils.formatText("&a - vent: Activate the Vent Editor"));
+            player.sendMessage(Utils.formatText("&a - task: Activate the Task Editor"));
+            player.sendMessage(Utils.formatText("&a - meeting: Set the center of the meeting table"));
+            player.sendMessage(Utils.formatText("&a - spawn: Set the center of the spawn"));
+            player.sendMessage(Utils.formatText("&a - start: Start a game of Village"));
+            player.sendMessage(Utils.formatText("&a - end: End a game of Village"));
+            player.sendMessage(Utils.formatText("&a - no-edit: Exit any editor"));
+            player.sendMessage(Utils.formatText("&a - force-mob (player: required): Force player to Mobs"));
+            player.sendMessage(Utils.formatText("&a - force-villager (player: required): Force player to Villagers"));
+            player.sendMessage(Utils.formatText(
+                    "&a - save (id: optional): Will save current setup under the ID, defaults to the world name"));
+            player.sendMessage(Utils
+                    .formatText("&a - load (id: optional): Will load setup given the ID, defaults to the world name"));
+            player.sendMessage(
+                    Utils.formatText("&a - tasks-needed (number: required): Set the amount of tasks per Villager"));
+            player.sendMessage(
+                    Utils.formatText("&a - kill-cooldown (number: required, ticks): Set the kill cooldown in ticks"));
             player.sendMessage(
                     Utils.formatText(
-                            "&a&l[Village]&r&a Command usage: /village [vent/task/meeting/spawn/start/end/no-edit]"));
+                            "&a - discussion-time (number: required, ticks): Set the discussion time in ticks"));
+            player.sendMessage(
+                    Utils.formatText("&a - voting-time (number: required, ticks): Set the voting time in ticks"));
+            player.sendMessage(
+                    Utils.formatText(
+                            "&a - button-time (number: required, ticks): Set the cooldown on button in ticks"));
+            player.sendMessage(Utils.formatText(
+                    "&a - max-button (number: required): Set the max amount of button pressed per Villager"));
             return false;
         }
 
@@ -92,19 +120,69 @@ public class VillageCommand implements CommandExecutor {
                 handleSpawnLocation(player);
                 break;
             case "start":
+                player.sendMessage(Utils.formatText("&a&l[Village]&r&a Starting Village."));
                 this.village.getGame().start();
                 break;
             case "end":
+                player.sendMessage(Utils.formatText("&a&l[Village]&r&a Ending Village."));
                 this.village.getGame().end();
                 break;
             case "no-edit":
-                this.village.getEditor().exitEditor(player);    
+                this.village.getEditor().exitEditor(player);
                 break;
             case "force-villager":
                 handleForceVillager(player, args[1].strip());
                 break;
             case "force-mob":
                 handleForceMob(player, args[1].strip());
+                break;
+            case "save":
+                player.sendMessage(Utils.formatText("&e&l[VILLAGE]&r&e Saving world config..."));
+                if (args.length == 2) {
+                    this.village.getGame().saveCurrentGameConfig(args[1].strip());
+                } else {
+                    this.village.getGame().saveCurrentGameConfig(player.getWorld().getName());
+                }
+                player.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Saved world config!"));
+                break;
+            case "load":
+                player.sendMessage(Utils.formatText("&e&l[VILLAGE]&r&e Loading world config..."));
+                if (args.length == 2) {
+                    this.village.getGame().loadFromSaveID(player.getWorld(), args[1].strip());
+                } else {
+                    this.village.getGame().loadFromSaveID(player.getWorld(), player.getWorld().getName());
+                }
+                player.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Loaded world config!"));
+                break;
+            case "tasks-needed":
+                int tasksNeeded = Integer.valueOf(args[1].strip());
+                this.village.getGame().setTasksPerVillager(tasksNeeded);
+                player.sendMessage(Utils.formatText("&a&l[Village]&r&a Updated needed task count."));
+                break;
+            case "kill-cooldown":
+                long killCooldown = Long.valueOf(args[1].strip());
+                this.village.getGame().setKillCooldown(killCooldown);
+                player.sendMessage(Utils.formatText("&a&l[Village]&r&a Updated kill cooldown."));
+                break;
+            case "discussion-time":
+                long discussionTime = Long.valueOf(args[1].strip());
+                this.village.getGame().setDiscussionTime(discussionTime);
+                player.sendMessage(Utils.formatText("&a&l[Village]&r&a Updated discussion time."));
+                break;
+            case "voting-time":
+                long votingTime = Long.valueOf(args[1].strip());
+                this.village.getGame().setVotingTime(votingTime);
+                player.sendMessage(Utils.formatText("&a&l[Village]&r&a Updated voting time."));
+                break;
+            case "button-time":
+                long buttonTime = Long.valueOf(args[1].strip());
+                this.village.getGame().setMeetingButtonCooldown(buttonTime);
+                player.sendMessage(Utils.formatText("&a&l[Village]&r&a Updated button cooldown."));
+                break;
+            case "max-button":
+                int uses = Integer.valueOf(args[1].strip());
+                this.village.getGame().setMaxMeetingButtonUses(uses);
+                player.sendMessage(Utils.formatText("&a&l[Village]&r&a Updated max button uses."));
                 break;
             default:
                 break;
