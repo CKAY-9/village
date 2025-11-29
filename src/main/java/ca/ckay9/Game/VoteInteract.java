@@ -7,6 +7,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
+import org.bukkit.inventory.EquipmentSlot;
 
 import ca.ckay9.Utils;
 
@@ -19,6 +20,10 @@ public class VoteInteract implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onEntityInteract(PlayerInteractAtEntityEvent event) {
+        if (event.getHand() == EquipmentSlot.OFF_HAND) {
+            return;
+        }
+
         if (!this.game.isGameInProgress() || !this.game.ableToVote()) {
             return;
         }

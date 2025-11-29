@@ -19,6 +19,10 @@ Village follows a very similar flow to Among Us. Players will move around, do ta
 Once a meeting is called, players will be teleported to the meeting teleport to discuss (I recommend using Discord for voice, but chat works fine).
 They are able to evict a player by majority vote, or just go onto the next day.
 
+<div align="center">
+    <img src="./assets/meeting.png" width=auto height=250 />
+</div>
+
 #### Villagers
 
 Villagers are the Crewmates of Village. They are given tasks and can have special roles like Medic (can revive dead bodies), Detective (can scan one player and check time of death).
@@ -36,11 +40,19 @@ These editors can be accessed via the `/village task` and `/village vent` comman
 
 To exit the editor, simply use right click the exit tool or use the command `/village no-edit`.
 
+<div align="center">
+    <img src="./assets/editor.png" width=auto height=250 />
+</div>
+
 ### Tasks
 
 As mentioned before, there are tasks in Village. These are no necessary to gameplay and do not provide a win condition; however, if there are tasks and all of them are completed, the Villagers will receive compasses that point to closest Mob.
 
 The generic tasks provided to are math (represented by a smithing table), trivia (represented by a lectern), and crafting (represented and uses a crafting table).
+
+<div align="center">
+    <img src="./assets/crafttask.png" width=auto height=250 />
+</div>
 
 #### Math Task
 
