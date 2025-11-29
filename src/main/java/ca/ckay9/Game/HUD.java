@@ -37,15 +37,21 @@ public class HUD {
         int score = 100;
 
         // border for the title text
-        Score titleBorder = objective.getScore(Utils.formatText("&l=-=-=-=-=-=-=-=-=-=-="));
+        Score titleBorder = objective.getScore(Utils.formatText("&l=-=-=-=-=-=-=-=-=-=-=-"));
         titleBorder.setScore(score--);
 
         if (Village.inDeveloperDebug()) {
             Score statusText = objective.getScore(Utils.formatText("&8Status: &a&l" + this.game.getGameStatus()));
             statusText.setScore(score--);
 
-            Score tickText = objective.getScore(Utils.formatText("&8TSS: &a&l" + this.gameLoop.getTicksSinceStart()));
-            tickText.setScore(score--);
+            Score eTickText = objective.getScore(Utils.formatText("&8TSS: &a&l" + this.gameLoop.getTicksSinceStart()
+                    + " &r&8(" + Utils.ticksToSeconds(this.gameLoop.getTicksSinceStart()) + "s)"));
+            eTickText.setScore(score--);
+
+            Score stateTickText = objective
+                    .getScore(Utils.formatText("&8TICS: &a&l" + this.gameLoop.getTicksInCurrentState() + " &r&8("
+                            + Utils.ticksToSeconds(this.gameLoop.getTicksInCurrentState()) + "s)"));
+            stateTickText.setScore(score--);
 
             Score devBorder = objective.getScore(Utils.formatText("&l=-=-= ^^^ DEV ^^^ =-=-="));
             devBorder.setScore(score--);

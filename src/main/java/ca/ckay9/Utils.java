@@ -30,4 +30,12 @@ public class Utils {
 
         Utils.getPlugin().getLogger().info("Log -> " + message);
     }
+
+    public static long ticksToSeconds(long ticks) {
+        return ticks / 20;
+    }
+
+    public static long secondsToTicks(long seconds) {
+        return seconds * 20;
+    }
 }

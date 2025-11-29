@@ -11,7 +11,7 @@ Village is a Minecraft server plugin that introduces a new gamemode based off <a
 
 ## Features
 
-Village is full of features to ensure that gameplay is as smooth as possible
+Village is full of features to ensure that gameplay is as smooth as possible.
 
 ### The Game
 
@@ -25,7 +25,7 @@ Villagers are the Crewmates of Village. They are given tasks and can have specia
 
 #### Mobs
 
-Mobs are the Impostors of Village. They are supposed to kill every Villager to win. Like
+Mobs are the Impostors of Village. They are supposed to kill every Villager to win. Similar to the Villagers, Mobs are also able to have special roles like Sweeper (hides bodies temporarily) and Wizard (switches locations of people). 
 
 ### Editor
 
@@ -47,19 +47,19 @@ The generic tasks provided to are math (represented by a smithing table), trivia
 A math task consists of two numbers, a and b, and a operand (e.g. +, -, *). The Villager will be
 asked to solve a random equation made up of two numbers (-10, 10) and one of the three operators (division isn't included because rounding feels unfair).
 
-Example: `What is -9 * 5?` The Villager will then type the answer in chat (not shown)
+Example: `What is -9 * 5?` The Villager will then type the answer in chat (not shown).
 
 #### Trivia Task
 
 A trivia task is a simple trivia question relating to general knowledge and Minecraft. General knowledge is a pretty subjective category, so I focused on Minecraft more, but hopefully it's fine.
 
-Example: `Do pigs fly (yes/no)?` The Villager will then type the answer in chat (not shown)
+Example: `Do pigs fly (yes/no)?` The Villager will then type the answer in chat (not shown).
 
 #### Craft Task
 
 A craft task requires the Villager to craft a specified item. They are given the required materials to craft the item.
 
-Example: `Craft: DIAMOND HOE` The Villager will craft a diamond hoe in any crafting table
+Example: `Craft: DIAMOND HOE` The Villager will craft a diamond hoe in any crafting table.
 
 #### Custom Task
 
@@ -77,4 +77,4 @@ All you need to do is download the latest release of the Village plugin (somethi
 
 Once in-game, you are able to setup vents, a spawn and meeting location, tasks, and others. This allows you to create your own maps.
 
-After everything is setup, you can get your friends together and play (or play by yourself, that's how I test it);
+After everything is setup, you can get your friends together and play (or play by yourself, that's how I test it).

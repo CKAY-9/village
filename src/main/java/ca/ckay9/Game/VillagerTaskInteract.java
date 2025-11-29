@@ -146,6 +146,11 @@ public class VillagerTaskInteract implements Listener {
             return;
         }
 
+        // allow players to type in chat
+        if (this.game.inDiscussion() || this.game.ableToVote()) {
+            return;
+        }
+
         Player player = event.getPlayer();
         if (!this.game.isPlayerVillager(player) && !Village.inDeveloperDebug()) {
             return;

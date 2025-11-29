@@ -14,7 +14,8 @@ import org.bukkit.inventory.meta.CompassMeta;
 public class GameLoop implements Runnable {
     private Game game;
     private HUD hud;
-    private long ticksSinceStart;
+    private long ticksSinceStart; // this counts up from game start until game end
+    private long ticksInCurrentState; // counts up since state change
 
     public GameLoop(Game game) {
         this.game = game;
@@ -28,6 +29,14 @@ public class GameLoop implements Runnable {
 
     public void setTicksSinceStart(int value) {
         this.ticksSinceStart = value;
+    }
+
+    public long getTicksInCurrentState() {
+        return this.ticksInCurrentState;
+    }
+
+    public void setTicksInCurrentState(long value) {
+        this.ticksInCurrentState = value;
     }
 
     private void villagerOnTick(Player player) {
@@ -58,8 +67,8 @@ public class GameLoop implements Runnable {
             this.game.addKillCooldown(player.getUniqueId(), 0L);
         }
 
-        if (cooldown > 0) {
-            this.game.addKillCooldown(player.getUniqueId(), cooldown - 1);
+        if (cooldown > 0 && this.game.getGameStatus() == Status.PLAYING) {
+            this.game.addKillCooldown(player.getUniqueId(), Math.max(0, cooldown - 1));
         }
     }
 
@@ -69,16 +78,30 @@ public class GameLoop implements Runnable {
             return;
         }
 
-        for (Player p : Bukkit.getOnlinePlayers()) {
-            hud.drawHUD(p);
+        if (this.game.getGameStatus() == Status.DISCUSSION) {
+            if (this.getTicksInCurrentState() > this.game.getDiscussionTime()) {
+                this.game.startVoting();
+            }
+        }
 
+        if (this.game.getGameStatus() == Status.VOTING) {
+            if (this.getTicksInCurrentState() > this.game.getVotingTime()
+                    && this.game.getGameStatus() != Status.ENDING_MEETING) {
+                this.game.endMeeting();
+            }
+        }
+
+        for (Player p : Bukkit.getOnlinePlayers()) {
             if (this.game.isPlayerVillager(p)) {
                 villagerOnTick(p);
             } else {
                 mobOnTick(p);
             }
+
+            hud.drawHUD(p);
         }
 
+        ticksInCurrentState++;
         ticksSinceStart++;
     }
 }

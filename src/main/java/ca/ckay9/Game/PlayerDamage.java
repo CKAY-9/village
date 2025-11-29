@@ -25,7 +25,7 @@ public class PlayerDamage implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerDamage(EntityDamageByEntityEvent event) {
-        if (!this.game.isGameInProgress()) {
+        if (!this.game.isGameInProgress() || this.game.getGameStatus() != Status.PLAYING) {
             return;
         }
 
@@ -33,13 +33,17 @@ public class PlayerDamage implements Listener {
             return;
         }
         
+        event.setCancelled(true);
+        event.setDamage(0);
+        
         Player damager = (Player)event.getDamager();
         Player damaged = (Player)event.getEntity();
 
         Long existingCooldown = this.game.getKillCooldowns().get(damager.getUniqueId());
-        if (this.game.isPlayerVillager(damager) || (existingCooldown != null && existingCooldown > 0)) {
-            event.setCancelled(true);
-            event.setDamage(0);
+        boolean villagerTriedToKill = this.game.isPlayerVillager(damager);
+        boolean onCooldown = existingCooldown != null && existingCooldown > 0;
+        boolean mobTriedToKillMob = !this.game.isPlayerVillager(damaged);
+        if (villagerTriedToKill || onCooldown || mobTriedToKillMob) {
             return;
         }
 

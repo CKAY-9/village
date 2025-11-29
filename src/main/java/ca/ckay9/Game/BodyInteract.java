@@ -1,5 +1,6 @@
 package ca.ckay9.Game;
 
+import org.bukkit.Location;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -40,7 +41,11 @@ public class BodyInteract implements Listener {
 
         // TODO: check if using ability
 
-        // start meeting
+        // clear body and start meeting
+        armorStand.teleport(new Location(armorStand.getLocation().getWorld(), 0, 0, 0));
+        armorStand.setInvulnerable(false);
+        armorStand.setInvisible(true);
+        armorStand.setHealth(0);
         this.game.startDiscussion(player, "REPORT: " + armorStand.getCustomName());
     }
 }

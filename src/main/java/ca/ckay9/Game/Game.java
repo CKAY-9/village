@@ -13,6 +13,8 @@ import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.CompassMeta;
@@ -29,6 +31,7 @@ public class Game {
     private Status status; // current game status
     private Location spawnLocation; // where players are teleported to on game start
     private Location meetingLocation; // the center of meetings, players spawn around this location
+    private ArmorStand meetingButton; // this acts as a custom button to start meetings
     private ArrayList<VillagerTask> villagerTasks; // all created tasks
     private HashMap<UUID, Role> playerRoles; // villager or mob => sub roles
     private HashMap<UUID, ChatTaskProgress> chatTaskExpectedResults; // used for trivia and math tasks
@@ -40,9 +43,16 @@ public class Game {
                                // getMobCount() and setMobCount())
     private GameLoop gameLoop; // the game loop instance
     private int gameLoopID; // ID to bukkit runnable
-    private boolean completedAllTasks;
-    private HashMap<UUID, Long> killCooldowns;
-    private long killCooldown;
+    private boolean completedAllTasks; // used to check for villager completion
+    private HashMap<UUID, Long> killCooldowns; // keeps track of kill cooldowns for each mob
+    private long killCooldown; // how long do mobs have to wait inbetween kills in ticks
+    private long votingTime; // how long does the voting time last in ticks
+    private long discussionTime; // how long do discussions last in ticks
+    private HashMap<UUID, ArrayList<UUID>> votes; // used to keep track of each players votes and who voted for them
+    private long meetingButtonCooldown; // how long do you have to wait before being able to use the meeting button in
+                                        // ticks
+    private HashMap<UUID, Integer> buttonUses; // how many times a player has pressed the meeting button
+    private long maxButtonUses; // how many times can each player use the button
 
     public Game(Village village) {
         this.village = village;
@@ -52,6 +62,7 @@ public class Game {
         this.playerRoles = new HashMap<>();
         this.spawnLocation = null;
         this.meetingLocation = null;
+        this.meetingButton = null;
         this.chatTaskExpectedResults = new HashMap<>();
         this.craftTaskExpectedResults = new HashMap<>();
         this.villagerCount = 1;
@@ -61,12 +72,52 @@ public class Game {
         this.completedAllTasks = false;
         this.killCooldowns = new HashMap<>();
         this.killCooldown = 600L;
+        this.votingTime = 600L;
+        this.discussionTime = 900L;
+        this.votes = new HashMap<>();
+        this.meetingButtonCooldown = 300;
+        this.maxButtonUses = 1;
+        this.buttonUses = new HashMap<>();
 
         PluginManager manager = village.getServer().getPluginManager();
         manager.registerEvents(new VentInteract(this), village);
         manager.registerEvents(new VillagerTaskInteract(this), village);
         manager.registerEvents(new PlayerDamage(this), village);
         manager.registerEvents(new BodyInteract(this), village);
+        manager.registerEvents(new PlayerMove(this), village);
+        manager.registerEvents(new VoteInteract(this), village);
+        manager.registerEvents(new MeetingButtonInteract(this), village);
+    }
+
+    /**
+     * @param value How long should votes last in
+     *              ticks (1sec = 20ticks)
+     */
+    public void setVotingTime(long value) {
+        this.votingTime = value;
+    }
+
+    /**
+     * @return The duration of a vote in ticks
+     */
+    public long getVotingTime() {
+        return this.votingTime;
+    }
+
+    /**
+     * @param value How long should discussions, where players just talk, should
+     *              last in
+     *              ticks (1sec = 20ticks)
+     */
+    public void setDiscussionTime(long value) {
+        this.discussionTime = value;
+    }
+
+    /**
+     * @return The duration of a discussion in ticks
+     */
+    public long getDiscussionTime() {
+        return this.discussionTime;
     }
 
     /**
@@ -75,6 +126,58 @@ public class Game {
      */
     public void setKillCooldown(long cooldownInTicks) {
         this.killCooldown = cooldownInTicks;
+    }
+
+    public void setVotes(HashMap<UUID, ArrayList<UUID>> votes) {
+        this.votes = votes;
+    }
+
+    public HashMap<UUID, ArrayList<UUID>> getVotes() {
+        return this.votes;
+    }
+
+    public void addVote(UUID uuid, UUID voter) {
+        ArrayList<UUID> arr = this.getVotes().get(voter);
+        if (arr == null) {
+            arr = new ArrayList<>();
+        }
+
+        arr.add(voter);
+        this.getVotes().put(uuid, arr);
+    }
+
+    public boolean hasAlreadyVotedForThisPlayer(UUID uuid, UUID voter) {
+        ArrayList<UUID> votes = this.getVotes().get(uuid);
+        return (votes != null && votes.contains(voter));
+    }
+
+    public void clearPreviousPlayerVotes(UUID voter) {
+        for (Map.Entry<UUID, ArrayList<UUID>> entry : this.getVotes().entrySet()) {
+            if (entry.getValue().contains(voter)) {
+                entry.getValue().remove(voter);
+                entry.setValue(entry.getValue());
+            }
+        }
+    }
+
+    /**
+     * If the player already has no votes, this just returns
+     * 
+     * @param uuid          Who to check
+     * @param voterToRemove The voter who changed/removed thier vote
+     */
+    public void removeVote(UUID uuid, UUID voterToRemove) {
+        ArrayList<UUID> arr = this.getVotes().get(uuid);
+        if (arr == null) {
+            return;
+        }
+
+        arr.remove(voterToRemove);
+        this.getVotes().put(uuid, arr);
+    }
+
+    public void clearVotes() {
+        this.votes.clear();
     }
 
     public long getKillCooldown() {
@@ -146,6 +249,11 @@ public class Game {
         this.villagerCount = Bukkit.getOnlinePlayers().size() - value;
     }
 
+    /**
+     * 
+     * @param player Who to check if they're dead
+     * @return True if they are in spectator, false otherwise
+     */
     public boolean isPlayerDead(Player player) {
         return player.getGameMode() == GameMode.SPECTATOR;
     }
@@ -190,6 +298,12 @@ public class Game {
         return total;
     }
 
+    /**
+     * Forces a player to the villagers. Sets up inventory, tasks, and everything
+     * else needed.
+     * 
+     * @param player Who should be made a villager
+     */
     public void setPlayerToVillager(Player player) {
         player.getInventory().clear();
         for (PotionEffect effect : player.getActivePotionEffects()) {
@@ -215,6 +329,12 @@ public class Game {
         player.teleport(this.getSpawnLocation());
     }
 
+    /**
+     * Forces a player to the mobs. Sets up inventory, tasks, and everything else
+     * needed.
+     * 
+     * @param player Who should be made a mob
+     */
     public void setPlayerToMob(Player player) {
         player.getInventory().clear();
         for (PotionEffect effect : player.getActivePotionEffects()) {
@@ -240,16 +360,19 @@ public class Game {
     }
 
     /**
-     * Starts a meeting by teleporting everyone to the meeting location
+     * Starts a discussion by teleporting everyone to the meeting location
      * 
      * @param caller Who initiated the meeting
      * @param reason Why the meeting was started
      */
     public void startDiscussion(Player caller, String reason) {
         this.setGameStatus(Status.DISCUSSION);
+        Bukkit.broadcastMessage(
+                Utils.formatText("&b&l[MEETING]&r&b Discussion started. Called by &a&l" + caller.getName()));
+        Utils.verbosePlayerLog(caller, "Started meeting.\n  -> reason = " + reason);
 
         double increment = (Math.PI * 2) / Bukkit.getOnlinePlayers().size();
-        long distance = 5;
+        long distance = 2;
         int i = 0;
         for (Player p : Bukkit.getOnlinePlayers()) {
             p.sendTitle(Utils.formatText("&b&lMEETING"),
@@ -258,9 +381,88 @@ public class Game {
 
             double x = Math.cos(increment * i) * distance;
             double z = Math.sin(increment * i) * distance;
-            p.teleport(this.getMeetingLocation().clone().add(x, 0, z));
+            Location playerLoc = this.getMeetingLocation().clone();
+            playerLoc.add(x, 0, z);
+            p.teleport(playerLoc);
             i++;
         }
+    }
+
+    /**
+     * Starts the meeting section of a discussion, players are able to evict mobs.
+     * This should only be called after startDiscussion
+     * as it doesn't teleport players around the talbe
+     */
+    public void startVoting() {
+        this.setGameStatus(Status.VOTING);
+        Bukkit.broadcastMessage(Utils.formatText("&b&l[MEETING]&r&b Voting started."));
+        Utils.verboseLog("Started voting.");
+    }
+
+    /**
+     * Ends a meeting/discussion. Will handle player votes. Resets killer cooldowns
+     * to default.
+     * Players are shown results for 5 seconds and then let free
+     */
+    public void endMeeting() {
+        // announce end and votes
+        this.setGameStatus(Status.ENDING_MEETING);
+        Utils.verboseLog("Meeting ending.");
+
+        if (this.getVotes().size() <= 0) {
+            Bukkit.broadcastMessage(Utils.formatText("&b&l[MEETING]&r&b Meeting over. No one voted."));
+        } else {
+            Bukkit.broadcastMessage(Utils.formatText("&b&l[MEETING]&r&b Meeting over. Votes:"));
+            boolean tie = false;
+            Map.Entry<UUID, ArrayList<UUID>> highest = null;
+            for (Map.Entry<UUID, ArrayList<UUID>> entry : this.getVotes().entrySet()) {
+                Player player = Bukkit.getPlayer(entry.getKey());
+                if (player == null) {
+                    // disconnected or something else
+                    continue;
+                }
+
+                // reset killer cooldowns
+                if (!isPlayerVillager(player)) {
+                    this.addKillCooldown(player.getUniqueId(), this.getKillCooldown());
+                }
+
+                Bukkit.broadcastMessage(
+                        Utils.formatText("&3 - &l" + player.getName() + "&r&3: &b&l" + entry.getValue().size()));
+                Utils.verbosePlayerLog(player, "Votes = " + entry.getValue().size());
+
+                if (highest == null) {
+                    highest = entry;
+                    continue;
+                }
+
+                if (highest.getValue().size() < entry.getValue().size()) {
+                    highest = entry;
+                    tie = false;
+                } else if (highest.getValue().size() == entry.getValue().size()) {
+                    tie = true;
+                }
+            }
+
+            if (highest != null && !tie) {
+                Player votedOut = Bukkit.getPlayer(highest.getKey());
+                if (votedOut != null) {
+                    Bukkit.broadcastMessage(
+                            Utils.formatText("&b&l[MEETING] " + votedOut.getName() + "&r&b has been voted out."));
+                    Utils.verbosePlayerLog(votedOut, "Has been voted out.\n  -> votes = " + highest.getValue().size());
+                }
+            }
+
+            this.clearVotes();
+        }
+
+        this.village.getServer().getScheduler().scheduleSyncDelayedTask(village, new Runnable() {
+            @Override
+            public void run() {
+                // TODO: check win condition, e.g. no mobs or mobs overwhelm villagers
+                setGameStatus(Status.PLAYING);
+            }
+        }, 100L);
     }
 
     /**
@@ -268,6 +470,8 @@ public class Game {
      * Can fail if locations aren't setup, no players, etc.
      */
     public void start() {
+        // TODO: load world config
+
         // players check
         int onlinePlayerCount = Bukkit.getOnlinePlayers().size();
         if (onlinePlayerCount <= 0) {
@@ -355,6 +559,9 @@ public class Game {
             p.setGameMode(GameMode.SURVIVAL);
             p.teleport(this.getSpawnLocation());
             p.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
+
+            p.setFlying(false);
+            p.setAllowFlight(false);
         }
         Utils.verboseLog("Ending Village game. Cleaned up players.");
 
@@ -393,6 +600,7 @@ public class Game {
 
         if (result >= 100 && !this.hasCompletedAllTasks()) {
             this.setCompletedAllTasks(true);
+            Utils.verboseLog("Villagers have completed 100% of tasks. Giving compass.");
 
             for (Player p : Bukkit.getOnlinePlayers()) {
                 if (this.isPlayerVillager(p)) {
@@ -464,10 +672,23 @@ public class Game {
      */
     public void setGameStatus(Status newStatus) {
         this.status = newStatus;
+
+        // reset ticks in current state
+        if (this.isGameInProgress() && this.gameLoop != null) {
+            this.gameLoop.setTicksInCurrentState(0);
+        }
     }
 
     public boolean isGameInProgress() {
         return this.status != Status.NO_GAME;
+    }
+
+    public boolean inDiscussion() {
+        return this.status == Status.DISCUSSION;
+    }
+
+    public boolean ableToVote() {
+        return this.status == Status.VOTING;
     }
 
     public Location getSpawnLocation() {
@@ -482,8 +703,62 @@ public class Game {
         return this.meetingLocation;
     }
 
+    /**
+     * Sets the meeting location. Players will spawn around this location.
+     * A "button" will also spawn here and act as an emergency meeting button.
+     * 
+     * @param location Where to set the center of the meeting location
+     */
     public void setMeetingLocation(Location location) {
         this.meetingLocation = location;
+
+        // move button
+        ArmorStand stand = this.getMeetingButton();
+        Location standLoc = location.clone();
+        standLoc.add(0, -1.7f, 0);
+        if (stand == null || stand.isDead()) {
+            stand = (ArmorStand) location.getWorld().spawnEntity(standLoc, EntityType.ARMOR_STAND);
+        }
+
+        stand.setCustomNameVisible(true);
+        stand.setCustomName(Utils.formatText("&c&lEMERGENCY MEETING"));
+        stand.teleport(standLoc);
+        stand.setGravity(false);
+        stand.setInvulnerable(true);
+        stand.setInvisible(true);
+        stand.setMarker(false);
+        stand.setSmall(false);
+        stand.getEquipment().setHelmet(new ItemStack(Material.LEATHER_HELMET));
+
+        this.setMeetingButton(stand);
+    }
+
+    /**
+     * @return The amount of time players must wait before using the button in ticks
+     *         (1sec = 20ticks)
+     */
+    public long getMeetingButtonCooldown() {
+        return this.meetingButtonCooldown;
+    }
+
+    public HashMap<UUID, Integer> getMeetingUses() {
+        return this.buttonUses;
+    }
+
+    public long getMaxMeetingButtonUses() {
+        return this.maxButtonUses;
+    }
+
+    public GameLoop getGameLoop() {
+        return this.gameLoop;
+    }
+
+    public ArmorStand getMeetingButton() {
+        return this.meetingButton;
+    }
+
+    public void setMeetingButton(ArmorStand armorStand) {
+        this.meetingButton = armorStand;
     }
 
     public ArrayList<VillagerTask> getVillagerTasks() {

@@ -5,6 +5,7 @@ public enum Status {
     PRE_GAME,
     PLAYING,
     DISCUSSION,
-    MEETING,
+    VOTING,
+    ENDING_MEETING,
     POST_GAME
 }
