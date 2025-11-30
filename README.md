@@ -25,7 +25,7 @@ They are able to evict a player by majority vote, or just go onto the next day.
 
 #### Villagers
 
-Villagers are the Crewmates of Village. They are given tasks and can have special roles like Medic (can revive dead bodies), Detective (can scan one player and check time of death).
+Villagers are the Crewmates of Village. They are given tasks and can have special roles like Medic (can revive dead bodies), Detective (can kill and check time of death).
 
 #### Mobs
 

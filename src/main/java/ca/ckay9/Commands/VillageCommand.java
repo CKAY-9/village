@@ -213,7 +213,7 @@ public class VillageCommand implements CommandExecutor {
                     break;
             }
         } catch (ArrayIndexOutOfBoundsException ex) {
-            player.sendMessage(Utils.formatText("&c&l[VILLAGE]&r&c Invalid command usage. Use &l/village&r&c to check usage."));
+            Utils.getPlugin().getLogger().warning(ex.toString());
         }
 
         return false;

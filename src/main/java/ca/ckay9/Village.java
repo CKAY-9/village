@@ -38,6 +38,7 @@ public class Village extends JavaPlugin {
     public void onEnable() {
         Storage.initializeConfig();
         Storage.initializeWorldsData();
+        Storage.initializeCustomTasksData();
 
         this.game = new Game(this);
         this.editor = new Editor(this);

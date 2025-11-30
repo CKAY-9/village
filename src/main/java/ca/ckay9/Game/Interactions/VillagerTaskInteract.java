@@ -46,6 +46,7 @@ public class VillagerTaskInteract implements Listener {
 
         Player player = event.getPlayer();
         if (!this.game.isPlayerVillager(player) && !Village.inDeveloperDebug()) {
+            event.setCancelled(true);
             return;
         }
 
@@ -56,6 +57,7 @@ public class VillagerTaskInteract implements Listener {
         }
 
         if (!task.assignedToThis(player.getUniqueId())) {
+            event.setCancelled(true);
             return;
         }
 

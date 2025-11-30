@@ -13,6 +13,9 @@ public class Storage {
     public static File worldsFile;
     public static YamlConfiguration worldsData;
 
+    public static File customTasksFile;
+    public static YamlConfiguration customTasks;
+
     public static void initializeConfig() {
         try {
             configFile = new File(Utils.getPlugin().getDataFolder(), "config.yml");
@@ -30,17 +33,20 @@ public class Storage {
 
             if (!config.isSet("debug.developer")) {
                 config.set("debug.developer", false);
-                config.setInlineComments("debug.developer", Collections.singletonList("This will skip a lot of checks for roles, game status, etc."));
+                config.setInlineComments("debug.developer",
+                        Collections.singletonList("This will skip a lot of checks for roles, game status, etc."));
             }
 
             if (!config.isSet("debug.verboseLogging")) {
                 config.set("debug.verboseLogging", false);
-                config.setInlineComments("debug.verboseLogging", Collections.singletonList("Logs a lot. Recommend having disabled but can be useful."));
+                config.setInlineComments("debug.verboseLogging",
+                        Collections.singletonList("Logs a lot. Recommend having disabled but can be useful."));
             }
 
             if (!config.isSet("tasks.doThemAll")) {
                 config.set("tasks.doThemAll", true);
-                config.setInlineComments("tasks.doThemAll", Collections.singletonList("Every villager will have to do every task. This overrides any other values."));
+                config.setInlineComments("tasks.doThemAll", Collections
+                        .singletonList("Every villager will have to do every task. This overrides any other values."));
             }
 
             config.save(configFile);
@@ -64,6 +70,26 @@ public class Storage {
 
             worldsData = YamlConfiguration.loadConfiguration(worldsFile);
             worldsData.save(worldsFile);
+        } catch (IOException ex) {
+            Utils.getPlugin().getLogger().warning(ex.toString());
+        }
+    }
+
+    public static void initializeCustomTasksData() {
+        try {
+            customTasksFile = new File(Utils.getPlugin().getDataFolder(), "customTasks.yml");
+            if (!customTasksFile.exists()) {
+                if (customTasksFile.getParentFile().mkdirs()) {
+                    Utils.getPlugin().getLogger().info("Created Villager folder!");
+                }
+
+                if (customTasksFile.createNewFile()) {
+                    Utils.getPlugin().getLogger().info("Created custom tasks file!");
+                }
+            }
+
+            customTasks = YamlConfiguration.loadConfiguration(customTasksFile);
+            customTasks.save(customTasksFile);
         } catch (IOException ex) {
             Utils.getPlugin().getLogger().warning(ex.toString());
         }

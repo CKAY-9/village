@@ -44,7 +44,7 @@ public class MagicWandInteract implements Listener {
         }
 
         ItemStack itemInHand = player.getInventory().getItemInMainHand();
-        if (itemInHand != null) {
+        if (itemInHand == null) {
             itemInHand = player.getInventory().getItemInOffHand();
         }
 

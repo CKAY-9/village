@@ -10,6 +10,7 @@ import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
+import org.bukkit.GameRule;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -423,6 +424,7 @@ public class Game {
      * @param player Who should be made a villager
      */
     public void setPlayerToVillager(Player player) {
+        player.getWorld().setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false);
         player.getInventory().clear();
         if (!this.getPlayerRoles().containsValue(Role.DETECTIVE)
                 || this.getPlayerRole(player.getUniqueId()) == Role.DETECTIVE) {
@@ -484,6 +486,8 @@ public class Game {
      * @param player Who should be made a mob
      */
     public void setPlayerToMob(Player player) {
+        player.getWorld().setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false);
+
         player.getInventory().clear();
         if (!this.getPlayerRoles().containsValue(Role.SWEEPER)
                 || this.getPlayerRole(player.getUniqueId()) == Role.SWEEPER) {
@@ -882,6 +886,8 @@ public class Game {
 
             p.setFlying(false);
             p.setAllowFlight(false);
+
+            p.getWorld().setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, true);
         }
         Utils.verboseLog("Ending Village game. Cleaned up players.");
 
