@@ -102,6 +102,8 @@ public class VillageCommand implements CommandExecutor {
                             "&a - button-time (number: required, ticks): Set the cooldown on button in ticks"));
             player.sendMessage(Utils.formatText(
                     "&a - max-button (number: required): Set the max amount of button pressed per Villager"));
+            player.sendMessage(Utils.formatText(
+                    "&a - task-win: Toggle allowing Villagers to win on task compleition"));
             return false;
         }
 
@@ -184,6 +186,15 @@ public class VillageCommand implements CommandExecutor {
                 this.village.getGame().setMaxMeetingButtonUses(uses);
                 player.sendMessage(Utils.formatText("&a&l[Village]&r&a Updated max button uses."));
                 break;
+            case "task-win":
+                if (!this.village.getGame().canWinOnTasks()) {
+                    this.village.getGame().setAllowTaskWin(true);
+                    player.sendMessage(Utils.formatText("&a&l[Village]&r&a Allowing Task Completion win condition."));
+                } else {
+                    this.village.getGame().setAllowTaskWin(false);
+                    player.sendMessage(Utils.formatText("&a&l[Village]&r&a Ignoring Task Completion win condition."));
+                }
+
             default:
                 break;
         }

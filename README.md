@@ -46,7 +46,7 @@ To exit the editor, simply use right click the exit tool or use the command `/vi
 
 ### Tasks
 
-As mentioned before, there are tasks in Village. These are no necessary to gameplay and do not provide a win condition; however, if there are tasks and all of them are completed, the Villagers will receive compasses that point to closest Mob.
+As mentioned before, there are tasks in Village. These are no necessary to gameplay but do provide another win condition for the villagers; however, if there are tasks and all of them are completed without the win condition, the Villagers will receive compasses that point towards a Mob.
 
 The generic tasks provided to are math (represented by a smithing table), trivia (represented by a lectern), and crafting (represented and uses a crafting table).
 
@@ -82,6 +82,11 @@ of the three generic tasks but can be made to be whatever you want.
 
 Although a "secondary" feature, Village does offer a developer mode and verbose loggin with it's config. Developer mode will ignore certain checks and similar things that would otherwise interfere with testing, make sure this is disabled if you just want to create and play Village. Verbose logging logs a large majority of interactions and things realting to Village, can be useful for debugging and knowing what's going on in-game. 
 
+### Configuration
+
+There is two different configs in Village. The first one is the global config. This is responsible for things like developer mode, verbose logging, or other plugin wide changes.
+The other config is individual world/build configs. Server operators are able load and save configs by using the `/village load (id: optional)` and `/village save (id: optional)` commands.
+By default, the ID is just the world name, but you can load any config from any world as long as you know the ID (check the `worlds.yml` file). To see all possible configuration options, check `/village` and the generated Village folder.
 
 ## How do I play Village?
 

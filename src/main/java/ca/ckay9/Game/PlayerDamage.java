@@ -69,5 +69,6 @@ public class PlayerDamage implements Listener {
         damaged.sendTitle(Utils.formatText("&c&lKILLED"), Utils.formatText("You have been killed by &c&l" + damager.getName()), 20, 80, 20);
 
         this.game.addKillCooldown(damager.getUniqueId(), this.game.getKillCooldown());
+        this.game.checkWinCondition();
     }
 }

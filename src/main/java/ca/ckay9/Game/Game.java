@@ -55,6 +55,7 @@ public class Game {
                                         // ticks
     private HashMap<UUID, Integer> buttonUses; // how many times a player has pressed the meeting button
     private int maxButtonUses; // how many times can each player use the button
+    public boolean allowTaskWin; // if set to true, villagers can win if they finish all their tasks
 
     public Game(Village village) {
         this.village = village;
@@ -80,6 +81,7 @@ public class Game {
         this.meetingButtonCooldown = Utils.secondsToTicks(10);
         this.maxButtonUses = 1;
         this.buttonUses = new HashMap<>();
+        this.allowTaskWin = false;
 
         PluginManager manager = village.getServer().getPluginManager();
         manager.registerEvents(new VentInteract(this), village);
@@ -371,6 +373,125 @@ public class Game {
     }
 
     /**
+     * @return The win condition that is complete, NONE if no win condition has been
+     *         met.
+     */
+    public WinCondition getWinCondition() {
+        if (!this.isGameInProgress()) {
+            Utils.verboseLog("No win condition met.");
+            return WinCondition.NONE;
+        }
+
+        if (this.hasCompletedAllTasks() && this.canWinOnTasks()) {
+            Utils.verboseLog("Task Completion win condition completed.");
+            return WinCondition.TASK_COMPLETION;
+        }
+
+        if (this.getAliveMobCount() >= this.getAliveVillagerCount()) {
+            Utils.verboseLog("Mob Overwhelm win condition completed.");
+            return WinCondition.MOB_OVERWHELM;
+        }
+
+        if (this.getAliveMobCount() <= 0) {
+            Utils.verboseLog("Mobs Voted Out win condition completed.");
+            return WinCondition.MOBS_VOTED_OUT;
+        }
+
+        Utils.verboseLog("No win condition met.");
+        return WinCondition.NONE;
+    }
+
+    /**
+     * Handles what happens when a player is voted out. "Kills" them.
+     * @param player
+     */
+    public void voteOutPlayer(Player player) {
+        player.setGameMode(GameMode.SPECTATOR);
+        player.sendTitle(Utils.formatText("&c&lVOTED OUT"), Utils.formatText("You have been evicted by the &a&lVillagers"), 20, 80, 20);
+    }
+
+    /**
+     * Called after important events like meetings, kills, disconnects, etc.
+     * If there is a win condition that's met, this will handle it and end the game
+     */
+    public void checkWinCondition() {
+        Utils.verboseLog("Checking win condition.");
+        WinCondition condition = this.getWinCondition();
+        if (condition == WinCondition.NONE) {
+            this.setGameStatus(Status.PLAYING);
+            return;
+        }
+
+        if (condition == WinCondition.MOBS_VOTED_OUT) {
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                if (this.isPlayerVillager(player)) {
+                    player.sendTitle(Utils.formatText("&a&lVICTORY"),
+                            Utils.formatText("All &c&lMobs&r have been voted out."), 20, 80, 20);
+                } else {
+                    player.sendTitle(Utils.formatText("&c&lDEFEAT"),
+                            Utils.formatText("All &c&lMobs&r have been voted out."), 20, 80, 20);
+                }
+            }
+        } else if (condition == WinCondition.MOB_OVERWHELM) {
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                if (!this.isPlayerVillager(player)) {
+                    player.sendTitle(Utils.formatText("&a&lVICTORY"),
+                            Utils.formatText("The &a&lVillagers&r have been overwhelmed."), 20, 80, 20);
+                } else {
+                    player.sendTitle(Utils.formatText("&c&lDEFEAT"),
+                            Utils.formatText("The &a&lVillagers&r have been overwhelmed."), 20, 80, 20);
+                }
+            }
+        } else if (condition == WinCondition.TASK_COMPLETION) {
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                if (this.isPlayerVillager(player)) {
+                    player.sendTitle(Utils.formatText("&a&lVICTORY"),
+                            Utils.formatText("All &c&ltasks&r have been completed."), 20, 80, 20);
+                } else {
+                    player.sendTitle(Utils.formatText("&c&lDEFEAT"),
+                            Utils.formatText("All &c&ltasks&r have been completed."), 20, 80, 20);
+                }
+            }
+        }
+
+        this.village.getServer().getScheduler().scheduleSyncDelayedTask(village, new Runnable() {
+            @Override
+            public void run() {
+                end();
+            }
+        }, 100L);
+    }
+
+    /**
+     * @return The current amount of Villagers that are alive
+     */
+    public int getAliveVillagerCount() {
+        int total = 0;
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (this.isPlayerDead(player) || !this.isPlayerVillager(player)) {
+                continue;
+            }
+
+            total++;
+        }
+
+        return total;
+    }
+
+    public int getAliveMobCount() {
+        int total = 0;
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (this.isPlayerDead(player) || this.isPlayerDead(player)) {
+                continue;
+            }
+
+            total++;
+        }
+
+        return total;
+    }
+
+    /**
      * Starts a discussion by teleporting everyone to the meeting location
      * 
      * @param caller Who initiated the meeting
@@ -470,6 +591,8 @@ public class Game {
                             Utils.formatText("&b&l[MEETING] " + votedOut.getName() + "&r&b has been voted out."));
                     Utils.verbosePlayerLog(votedOut, "Has been voted out.\n  -> votes = " + highest.getValue().size());
                 }
+
+                this.voteOutPlayer(votedOut);
             }
 
             this.clearVotes();
@@ -478,8 +601,7 @@ public class Game {
         this.village.getServer().getScheduler().scheduleSyncDelayedTask(village, new Runnable() {
             @Override
             public void run() {
-                // TODO: check win condition, e.g. no mobs or mobs overwhelm villagers
-                setGameStatus(Status.PLAYING);
+                checkWinCondition();
             }
         }, 100L);
     }
@@ -489,8 +611,6 @@ public class Game {
      * Can fail if locations aren't setup, no players, etc.
      */
     public void start() {
-        // TODO: load world config
-
         // players check
         int onlinePlayerCount = Bukkit.getOnlinePlayers().size();
         if (onlinePlayerCount <= 0) {
@@ -515,8 +635,6 @@ public class Game {
 
         if (Storage.config.getBoolean("tasks.doThemAll", true)) {
             this.setTasksPerVillager(this.getVillagerTasks().size());
-        } else {
-            // TODO: get a provided amount.
         }
 
         this.setGameStatus(Status.PRE_GAME);
@@ -546,7 +664,8 @@ public class Game {
     /**
      * Attempts to end a Village game. Will fail if no gaming in progress.
      * This does not display the results of the match, as in who won. Only cleans up
-     * data and players. Status will be set to NO_GAME at the end.
+     * data and players. Doesn't handle win conditions. Status will be set to
+     * NO_GAME at the end.
      */
     public void end() {
         if (!this.isGameInProgress()) {
@@ -620,6 +739,10 @@ public class Game {
         if (result >= 100 && !this.hasCompletedAllTasks()) {
             this.setCompletedAllTasks(true);
             Utils.verboseLog("Villagers have completed 100% of tasks. Giving compass.");
+
+            if (this.canWinOnTasks()) {
+                this.checkWinCondition();
+            }
 
             for (Player p : Bukkit.getOnlinePlayers()) {
                 if (this.isPlayerVillager(p)) {
@@ -734,6 +857,17 @@ public class Game {
         this.spawnLocation = location;
     }
 
+    public void setAllowTaskWin(boolean value) {
+        this.allowTaskWin = value;
+    }
+
+    /**
+     * @return True if Villagers are able to win upon 100%ing tasks
+     */
+    public boolean canWinOnTasks() {
+        return this.allowTaskWin;
+    }
+
     public Location getMeetingLocation() {
         return this.meetingLocation;
     }
@@ -776,7 +910,7 @@ public class Game {
     public long getMeetingButtonCooldown() {
         return this.meetingButtonCooldown;
     }
-    
+
     /**
      * @param ticks The new cooldown in ticks
      */
@@ -846,7 +980,7 @@ public class Game {
         try {
             Utils.verboseLog("Saving world config...");
             String root = "saved." + id + ".";
-            
+
             Utils.verboseLog("Saving gameplay values...");
             Storage.worldsData.set(root + "tasksNeeded", this.getTasksPerVillager());
             Storage.worldsData.set(root + "killCooldown", this.getKillCooldown());
@@ -854,8 +988,9 @@ public class Game {
             Storage.worldsData.set(root + "votingTime", this.getVotingTime());
             Storage.worldsData.set(root + "buttonTime", this.getMeetingButtonCooldown());
             Storage.worldsData.set(root + "maxButtons", this.getMaxMeetingButtonUses());
+            Storage.worldsData.set(root + "taskWin", this.canWinOnTasks());
             Utils.verboseLog("Saved gameplay values!");
-            
+
             int i = 0;
             String tasks = root + "tasks.";
             for (VillagerTask task : this.getVillagerTasks()) {
@@ -905,7 +1040,7 @@ public class Game {
                 Storage.worldsData.set(spawnLoc + "x", this.getSpawnLocation().getX());
                 Storage.worldsData.set(spawnLoc + "y", this.getSpawnLocation().getY());
                 Storage.worldsData.set(spawnLoc + "z", this.getSpawnLocation().getZ());
-                 Utils.verboseLog("Saved spawn location.");
+                Utils.verboseLog("Saved spawn location.");
             }
 
             Storage.worldsData.save(Storage.worldsFile);
@@ -930,6 +1065,7 @@ public class Game {
         this.setVotingTime(section.getLong("votingTime", this.getVotingTime()));
         this.setMeetingButtonCooldown(section.getLong("buttonTime", this.getMeetingButtonCooldown()));
         this.setMaxMeetingButtonUses(section.getInt("maxButtons", this.getMaxMeetingButtonUses()));
+        this.setAllowTaskWin(section.getBoolean("taskWin", this.canWinOnTasks()));
         Utils.verboseLog("Loaded gameplay values!");
 
         this.setSpawnLocation(new Location(

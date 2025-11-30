@@ -48,6 +48,8 @@ public class Village extends JavaPlugin {
 
     @Override
     public void onDisable() {
-
+        if (this.game.isGameInProgress()) {
+            this.game.end();
+        }
     }
 }
