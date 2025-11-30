@@ -55,7 +55,7 @@ public class VillagerTaskInteract implements Listener {
             return;
         }
 
-        if (!task.assignedToThis(player.getUniqueId()) && !Village.inDeveloperDebug()) {
+        if (!task.assignedToThis(player.getUniqueId())) {
             return;
         }
 
@@ -165,7 +165,7 @@ public class VillagerTaskInteract implements Listener {
         String message = event.getMessage().toLowerCase().strip();
         ChatTaskProgress taskProgress = this.game.getChatTaskExpectedResults().get(player.getUniqueId());
         if (taskProgress == null
-                || !taskProgress.getTask().assignedToThis(player.getUniqueId()) && !Village.inDeveloperDebug()) {
+                || !taskProgress.getTask().assignedToThis(player.getUniqueId()) || !Village.inDeveloperDebug()) {
             return;
         }
 
