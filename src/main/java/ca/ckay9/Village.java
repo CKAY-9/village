@@ -51,5 +51,9 @@ public class Village extends JavaPlugin {
         if (this.game.isGameInProgress()) {
             this.game.end();
         }
+
+        if (this.game.getMeetingButton() != null) {
+            this.game.getMeetingButton().remove();
+        }
     }
 }

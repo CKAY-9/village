@@ -42,6 +42,7 @@ public class VillageCompletor implements TabCompleter {
                     options.add("voting-time");
                     options.add("button-time");
                     options.add("max-button");
+                    options.add("task-win");
                 } else {
                     options.add("end");
                     options.add("force-villager");

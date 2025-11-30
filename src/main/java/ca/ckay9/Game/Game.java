@@ -16,6 +16,7 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -91,6 +92,8 @@ public class Game {
         manager.registerEvents(new PlayerMove(this), village);
         manager.registerEvents(new VoteInteract(this), village);
         manager.registerEvents(new MeetingButtonInteract(this), village);
+        manager.registerEvents(new PlayerLeave(this), village);
+        manager.registerEvents(new PlayerDropItem(this), village);
     }
 
     /**
@@ -155,11 +158,17 @@ public class Game {
         return (votes != null && votes.contains(voter));
     }
 
+    /**
+     * Clears all instances of this player in the votes. Used to cast new votes
+     * @param voter Who to remove
+     */
     public void clearPreviousPlayerVotes(UUID voter) {
         for (Map.Entry<UUID, ArrayList<UUID>> entry : this.getVotes().entrySet()) {
+            ArrayList<UUID> uuids = entry.getValue();
             if (entry.getValue().contains(voter)) {
-                entry.getValue().remove(voter);
-                entry.setValue(entry.getValue());
+                uuids.remove(voter);
+                entry.setValue(uuids);
+                break;
             }
         }
     }
@@ -167,7 +176,7 @@ public class Game {
     /**
      * If the player already has no votes, this just returns
      * 
-     * @param uuid          Who to check
+     * @param uuid          Who to remove a vote from
      * @param voterToRemove The voter who changed/removed thier vote
      */
     public void removeVote(UUID uuid, UUID voterToRemove) {
@@ -176,13 +185,13 @@ public class Game {
             return;
         }
 
-        if (arr.remove(voterToRemove)) {
-            this.getVotes().put(uuid, arr);
+        arr.remove(voterToRemove);
+        if (arr.size() <= 0) {
+            this.getVotes().put(uuid, null);
+            return;
         }
 
-        if (arr.size() <= 0) {
-            this.getVotes().remove(uuid);
-        }
+        this.getVotes().put(uuid, arr);
     }
 
     public void clearVotes() {
@@ -403,11 +412,13 @@ public class Game {
 
     /**
      * Handles what happens when a player is voted out. "Kills" them.
+     * 
      * @param player
      */
     public void voteOutPlayer(Player player) {
         player.setGameMode(GameMode.SPECTATOR);
-        player.sendTitle(Utils.formatText("&c&lVOTED OUT"), Utils.formatText("You have been evicted by the &a&lVillagers"), 20, 80, 20);
+        player.sendTitle(Utils.formatText("&c&lVOTED OUT"),
+                Utils.formatText("You have been evicted by the &a&lVillagers"), 20, 80, 20);
     }
 
     /**
@@ -481,7 +492,7 @@ public class Game {
     public int getAliveMobCount() {
         int total = 0;
         for (Player player : Bukkit.getOnlinePlayers()) {
-            if (this.isPlayerDead(player) || this.isPlayerDead(player)) {
+            if (this.isPlayerDead(player) || this.isPlayerVillager(player)) {
                 continue;
             }
 
@@ -702,6 +713,26 @@ public class Game {
             p.setAllowFlight(false);
         }
         Utils.verboseLog("Ending Village game. Cleaned up players.");
+
+        // cleanup bodies
+        for (Entity entity : players.get(0).getWorld().getEntities()) {
+            if (entity.getType() != EntityType.ARMOR_STAND) {
+                continue;
+            }
+
+            ArmorStand stand = (ArmorStand) entity;
+            if (!stand.getCustomName().contains(Utils.formatText("&c&lBODY"))) {
+                continue;
+            }
+
+            stand.teleport(new Location(stand.getWorld(), 0, 0, 0));
+            stand.remove();
+        }
+
+        this.playerRoles.clear();
+        this.killCooldowns.clear();
+        this.votes.clear();
+        this.completedAllTasks = false;
 
         this.gameLoop = null;
         Bukkit.getScheduler().cancelTask(gameLoopID);
@@ -1127,7 +1158,7 @@ public class Game {
 
             Utils.verboseLog("Loading vent systems...");
             // now link all vents
-            int i = 0;
+
             for (String k : savedVents.getKeys(false)) {
                 ConfigurationSection savedVent = savedVents.getConfigurationSection(k);
                 if (savedVent == null) {
@@ -1139,7 +1170,12 @@ public class Game {
                     continue;
                 }
 
-                Vent thisVent = this.getMobVents().get(i);
+                Block block = world.getBlockAt((int) savedVent.getDouble("x"), (int) savedVent.getDouble("y"),
+                        (int) savedVent.getDouble("z"));
+                Vent vent = this.getVentAtLocation(block.getLocation());
+                if (vent == null) {
+                    continue;
+                }
 
                 // go through each connected vent
                 for (String j : linkedVents.getKeys(false)) {
@@ -1155,8 +1191,8 @@ public class Game {
                         continue;
                     }
 
-                    thisVent.addConnectedVent(linkVent);
-                    linkVent.addConnectedVent(thisVent);
+                    vent.addConnectedVent(linkVent);
+                    linkVent.addConnectedVent(vent);
                 }
             }
 
