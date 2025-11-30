@@ -4,12 +4,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
+import org.bukkit.entity.Player;
 
 import ca.ckay9.Game.Game;
-import ca.ckay9.Game.Status;
 
 public class VillageCompletor implements TabCompleter {
     private Game game;
@@ -27,7 +28,7 @@ public class VillageCompletor implements TabCompleter {
         ArrayList<String> options = new ArrayList<>();
         switch (args.length) {
             case 1:
-                if (this.game.getGameStatus() == Status.NO_GAME) {
+                if (!this.game.isGameInProgress()) {
                     options.add("vent");
                     options.add("task");
                     options.add("meeting");
@@ -49,6 +50,34 @@ public class VillageCompletor implements TabCompleter {
                     options.add("force-villager");
                     options.add("force-mob");
                 }
+                break;
+            case 2:
+                String subcommand = args[0].strip().toLowerCase();
+                switch (subcommand) {
+                    case "ability-cooldown":
+                    case "max-button":
+                    case "button-time":
+                    case "kill-cooldown":
+                    case "tasks-needed":
+                    case "voting-time":
+                    case "discussion-time":
+                        options.add("0");
+                        break;
+                    case "save":
+                    case "load":
+                        options.add("id");
+                        break;
+                    case "force-villager":
+                    case "force-mob":
+                        for (Player p : Bukkit.getOnlinePlayers()) {
+                            options.add(p.getName());
+                        }
+                        break;
+                
+                    default:
+                        break;
+                }
+
                 break;
             default:
                 break;

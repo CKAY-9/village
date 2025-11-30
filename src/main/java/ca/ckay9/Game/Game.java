@@ -101,6 +101,7 @@ public class Game {
         manager.registerEvents(new PlayerDropItem(this), village);
         manager.registerEvents(new PlayerLeave(this, village.getEditor()), village);
         manager.registerEvents(new PlayerJoin(this), village);
+        manager.registerEvents(new MagicWandInteract(this), village);
     }
 
     /**
@@ -188,7 +189,7 @@ public class Game {
     }
 
     public void addVote(UUID uuid, UUID voter) {
-        ArrayList<UUID> arr = this.getVotes().get(voter);
+        ArrayList<UUID> arr = this.getVotes().get(uuid);
         if (arr == null) {
             arr = new ArrayList<>();
         }
@@ -469,11 +470,11 @@ public class Game {
         } else if (!this.getPlayerRoles().containsValue(Role.DARK_WIZARD) || this.getPlayerRole(player.getUniqueId()) == Role.DARK_WIZARD) {
             this.setPlayerRole(player.getUniqueId(), Role.DARK_WIZARD);
 
-            ItemStack hoe = new ItemStack(Material.NETHERITE_HOE);
-            ItemMeta hoeMeta = hoe.getItemMeta();
-            hoeMeta.setDisplayName(Utils.formatText("&lMAGIC HOE / RIGHT CLICK TO SWAP PLAYERS"));
-            hoe.setItemMeta(hoeMeta);
-            player.getInventory().addItem(hoe);
+            ItemStack wand = new ItemStack(Material.NETHERITE_HOE);
+            ItemMeta wandMeta = wand.getItemMeta();
+            wandMeta.setDisplayName(Utils.formatText("&lMAGIC WAND / RIGHT CLICK TO SWAP PLAYER LOCATIONS"));
+            wand.setItemMeta(wandMeta);
+            player.getInventory().addItem(wand);
 
             Utils.verbosePlayerLog(player, "Changed to dark wizard.");
             player.sendTitle(Utils.formatText("&c&lDARK WIZARD"),
@@ -559,10 +560,10 @@ public class Game {
             for (Player player : Bukkit.getOnlinePlayers()) {
                 if (this.isPlayerVillager(player)) {
                     player.sendTitle(Utils.formatText("&a&lVICTORY"),
-                            Utils.formatText("All &c&lMobs&r have been voted out."), 20, 80, 20);
+                            Utils.formatText("All &c&lMobs&r have been evicted."), 20, 80, 20);
                 } else {
                     player.sendTitle(Utils.formatText("&c&lDEFEAT"),
-                            Utils.formatText("All &c&lMobs&r have been voted out."), 20, 80, 20);
+                            Utils.formatText("All &c&lMobs&r have been evicted."), 20, 80, 20);
                 }
             }
         } else if (condition == WinCondition.MOB_OVERWHELM) {
@@ -855,6 +856,7 @@ public class Game {
 
         this.playerRoles.clear();
         this.killCooldowns.clear();
+        this.abilityCooldowns.clear();
         this.votes.clear();
         this.completedAllTasks = false;
 

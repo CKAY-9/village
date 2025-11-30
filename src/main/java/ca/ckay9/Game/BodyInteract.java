@@ -53,30 +53,38 @@ public class BodyInteract implements Listener {
         }
 
         Role role = this.game.getPlayerRole(player.getUniqueId());
-        if (itemInHand != null && (role != Role.VILLAGER || role != Role.MOB) && this.game.canUseAbility(player.getUniqueId())) {
-            // abilities that can be used on bodies
-            Material mat = itemInHand.getType();
-            this.game.addAbilityCooldown(player.getUniqueId(), this.game.getAbilityCooldown());
-            if (role == Role.SWEEPER && mat == Material.NETHERITE_SHOVEL) {
-                armorStand.teleport(new Location(armorStand.getLocation().getWorld(), 0, 0, 0));
-                armorStand.setInvulnerable(false);
-                armorStand.setInvisible(true);
-                armorStand.setHealth(0);
-                return;
-            }
+        if (itemInHand != null && (role != Role.VILLAGER || role != Role.MOB)) {
+            if (this.game.canUseAbility(player.getUniqueId())) {
+                // abilities that can be used on bodies
+                Material mat = itemInHand.getType();
+                if (role == Role.SWEEPER && mat == Material.NETHERITE_SHOVEL) {
+                    this.game.addAbilityCooldown(player.getUniqueId(), this.game.getAbilityCooldown());
+                    armorStand.teleport(new Location(armorStand.getLocation().getWorld(), 0, 0, 0));
+                    armorStand.setInvulnerable(false);
+                    armorStand.setInvisible(true);
+                    armorStand.setHealth(0);
+                    return;
+                }
 
-            if (role == Role.DETECTIVE && mat == Material.CLOCK && bodyPlayer != null) {
-                player.sendMessage(Utils.formatText("&e&l[T.O.D. CLOCK]&r&e Body has been dead for &e&l"
-                        + Utils.ticksToSeconds(this.game.getTimeOfDeathOfPlayer(bodyPlayer)) + "s"));
-                return;
-            }
+                if (role == Role.DETECTIVE && mat == Material.CLOCK && bodyPlayer != null) {
+                    this.game.addAbilityCooldown(player.getUniqueId(), this.game.getAbilityCooldown());
+                    player.sendMessage(Utils.formatText("&e&l[T.O.D. CLOCK]&r&e Body has been dead for &e&l"
+                            + Utils.ticksToSeconds(
+                                    this.game.timeSinceDeath(this.game.getTimeOfDeathOfPlayer(bodyPlayer)))
+                            + "s"));
+                    return;
+                }
 
-            if (role == Role.MEDIC && mat == Material.GOLDEN_CARROT && bodyPlayer != null) {
-                player.sendMessage(Utils.formatText("&b&l[MAGIC CARROT]&r&b Revived &a&lVillager."));
-                bodyPlayer.teleport(armorStand.getLocation());
-                bodyPlayer.setGameMode(GameMode.ADVENTURE);
-                armorStand.remove();
-                return;
+                if (role == Role.MEDIC && mat == Material.GOLDEN_CARROT && bodyPlayer != null) {
+                    this.game.addAbilityCooldown(player.getUniqueId(), this.game.getAbilityCooldown());
+                    player.sendMessage(Utils.formatText("&b&l[MAGIC CARROT]&r&b Revived &a&lVillager."));
+                    bodyPlayer.teleport(armorStand.getLocation());
+                    bodyPlayer.setGameMode(GameMode.ADVENTURE);
+                    armorStand.remove();
+                    return;
+                }
+            } else {
+                player.sendMessage(Utils.formatText("&c&l[ABILITY]&r&c Your ability is on cooldown."));
             }
         } else {
             // clear body and start meeting

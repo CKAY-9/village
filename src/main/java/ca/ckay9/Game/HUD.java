@@ -53,6 +53,16 @@ public class HUD {
                             + Utils.ticksToSeconds(this.gameLoop.getTicksInCurrentState()) + "s)"));
             stateTickText.setScore(score--);
 
+            Score mobCount = objective
+                    .getScore(Utils.formatText("&8Mobs: &c&l" + this.game.getAliveMobCount() + "/"
+                            + this.game.getMobCount()));
+            mobCount.setScore(score--);
+
+            Score villagerCount = objective
+                    .getScore(Utils.formatText("&8Villagers: &a&l" + this.game.getAliveVillagerCount() + "/"
+                            + this.game.getVillagerCount()));
+            villagerCount.setScore(score--);
+
             Score devBorder = objective.getScore(Utils.formatText("&l=-=-= ^^^ DEV ^^^ =-=-="));
             devBorder.setScore(score--);
         }
@@ -62,7 +72,7 @@ public class HUD {
         if (!this.game.isPlayerVillager(player)) {
             roleText = objective.getScore(Utils.formatText("&8Role: &c&l" + role.toString()));
         }
-        
+
         roleText.setScore(score--);
 
         if (role == Role.DETECTIVE || role == Role.DARK_WIZARD || role == Role.MEDIC || role == Role.SWEEPER) {
