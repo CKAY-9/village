@@ -7,3 +7,5 @@ description: "${project.description}"
 commands:
   village:
     description: Manage the Village gamemode.
+  vote:
+    description: Vote for a player during meetings.

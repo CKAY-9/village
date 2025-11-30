@@ -1,7 +1,5 @@
 package ca.ckay9.Game.Interactions;
 
-import java.util.UUID;
-
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -9,7 +7,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.inventory.EquipmentSlot;
 
-import ca.ckay9.Utils;
 import ca.ckay9.Game.Game;
 
 public class VoteInteract implements Listener {
@@ -43,21 +40,7 @@ public class VoteInteract implements Listener {
             return;
         }
 
-        UUID playerUUID = player.getUniqueId();
-        UUID targetUUID = target.getUniqueId();
-
-        if (this.game.hasAlreadyVotedForThisPlayer(targetUUID, playerUUID)) {
-            this.game.clearPreviousPlayerVotes(playerUUID);
-            Utils.verbosePlayerLog(player,
-                    "Removed their vote from player " + target.getName() + " (" + targetUUID + ")");
-            player.sendMessage(Utils.formatText("&e&l[MEETING]&r&e You removed your vote from &l" + target.getName()));
-        } else {
-            this.game.clearPreviousPlayerVotes(playerUUID);
-            Utils.verbosePlayerLog(player, "Voted for player " + target.getName() + " (" + targetUUID + ")");
-            this.game.addVote(targetUUID, playerUUID);
-            player.sendMessage(Utils.formatText("&e&l[MEETING]&r&e You voted for &l" + target.getName()));
-        }
-
+        this.game.voteForPlayer(target, player);
         event.setCancelled(true);
     }
 }

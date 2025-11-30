@@ -109,105 +109,111 @@ public class VillageCommand implements CommandExecutor {
             return false;
         }
 
-        String subCommand = args[0].toLowerCase().strip();
-        switch (subCommand) {
-            case "vent":
-                this.village.getEditor().enableVentEditorForPlayer(player);
-                break;
-            case "task":
-                this.village.getEditor().enableTaskEditorForPlayer(player);
-                break;
-            case "meeting":
-                handleMeetingLocation(player);
-                break;
-            case "spawn":
-                handleSpawnLocation(player);
-                break;
-            case "start":
-                player.sendMessage(Utils.formatText("&a&l[Village]&r&a Starting Village."));
-                this.village.getGame().start();
-                break;
-            case "end":
-                player.sendMessage(Utils.formatText("&a&l[Village]&r&a Ending Village."));
-                this.village.getGame().end();
-                break;
-            case "no-edit":
-                this.village.getEditor().exitEditor(player);
-                break;
-            case "force-villager":
-                handleForceVillager(player, args[1].strip());
-                break;
-            case "force-mob":
-                handleForceMob(player, args[1].strip());
-                break;
-            case "save":
-                player.sendMessage(Utils.formatText("&e&l[VILLAGE]&r&e Saving world config..."));
-                if (args.length == 2) {
-                    this.village.getGame().saveCurrentGameConfig(args[1].strip());
-                } else {
-                    this.village.getGame().saveCurrentGameConfig(player.getWorld().getName());
-                }
-                player.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Saved world config!"));
-                break;
-            case "load":
-                player.sendMessage(Utils.formatText("&e&l[VILLAGE]&r&e Loading world config..."));
-                if (args.length == 2) {
-                    this.village.getGame().loadFromSaveID(player.getWorld(), args[1].strip());
-                } else {
-                    this.village.getGame().loadFromSaveID(player.getWorld(), player.getWorld().getName());
-                }
-                player.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Loaded world config!"));
-                break;
-            case "tasks-needed":
-                int tasksNeeded = Integer.valueOf(args[1].strip());
-                if (this.village.getGame().setTasksPerVillager(tasksNeeded)) {
-                    player.sendMessage(Utils.formatText("&a&l[Village]&r&a Updated needed task count."));
-                } else {
-                    player.sendMessage(
-                            Utils.formatText("&c&l[Village]&r&c Failed to update needed task count. Max value: &c&l"
-                                    + this.village.getGame().getVillagerTasks().size()));
-                }
-                break;
-            case "kill-cooldown":
-                long killCooldown = Long.valueOf(args[1].strip());
-                this.village.getGame().setKillCooldown(killCooldown);
-                player.sendMessage(Utils.formatText("&a&l[Village]&r&a Updated kill cooldown."));
-                break;
-            case "discussion-time":
-                long discussionTime = Long.valueOf(args[1].strip());
-                this.village.getGame().setDiscussionTime(discussionTime);
-                player.sendMessage(Utils.formatText("&a&l[Village]&r&a Updated discussion time."));
-                break;
-            case "voting-time":
-                long votingTime = Long.valueOf(args[1].strip());
-                this.village.getGame().setVotingTime(votingTime);
-                player.sendMessage(Utils.formatText("&a&l[Village]&r&a Updated voting time."));
-                break;
-            case "button-time":
-                long buttonTime = Long.valueOf(args[1].strip());
-                this.village.getGame().setMeetingButtonCooldown(buttonTime);
-                player.sendMessage(Utils.formatText("&a&l[Village]&r&a Updated button cooldown."));
-                break;
-            case "max-button":
-                int uses = Integer.valueOf(args[1].strip());
-                this.village.getGame().setMaxMeetingButtonUses(uses);
-                player.sendMessage(Utils.formatText("&a&l[Village]&r&a Updated max button uses."));
-                break;
-            case "task-win":
-                if (!this.village.getGame().canWinOnTasks()) {
-                    this.village.getGame().setAllowTaskWin(true);
-                    player.sendMessage(Utils.formatText("&a&l[Village]&r&a Allowing Task Completion win condition."));
-                } else {
-                    this.village.getGame().setAllowTaskWin(false);
-                    player.sendMessage(Utils.formatText("&a&l[Village]&r&a Ignoring Task Completion win condition."));
-                }
-            case "ability-cooldown":
-                long abilityCooldown = Long.valueOf(args[1].strip());
-                this.village.getGame().setAbilityCooldown(abilityCooldown);
-                player.sendMessage(Utils.formatText("&a&l[Village]&r&a Updated ability cooldown."));
-                break;
-            default:
-                break;
+        try {
+            String subCommand = args[0].toLowerCase().strip();
+            switch (subCommand) {
+                case "vent":
+                    this.village.getEditor().enableVentEditorForPlayer(player);
+                    break;
+                case "task":
+                    this.village.getEditor().enableTaskEditorForPlayer(player);
+                    break;
+                case "meeting":
+                    handleMeetingLocation(player);
+                    break;
+                case "spawn":
+                    handleSpawnLocation(player);
+                    break;
+                case "start":
+                    player.sendMessage(Utils.formatText("&a&l[Village]&r&a Starting Village."));
+                    this.village.getGame().start();
+                    break;
+                case "end":
+                    player.sendMessage(Utils.formatText("&a&l[Village]&r&a Ending Village."));
+                    this.village.getGame().end();
+                    break;
+                case "no-edit":
+                    this.village.getEditor().exitEditor(player);
+                    break;
+                case "force-villager":
+                    handleForceVillager(player, args[1].strip());
+                    break;
+                case "force-mob":
+                    handleForceMob(player, args[1].strip());
+                    break;
+                case "save":
+                    player.sendMessage(Utils.formatText("&e&l[VILLAGE]&r&e Saving world config..."));
+                    if (args.length == 2) {
+                        this.village.getGame().saveCurrentGameConfig(args[1].strip());
+                    } else {
+                        this.village.getGame().saveCurrentGameConfig(player.getWorld().getName());
+                    }
+                    player.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Saved world config!"));
+                    break;
+                case "load":
+                    player.sendMessage(Utils.formatText("&e&l[VILLAGE]&r&e Loading world config..."));
+                    if (args.length == 2) {
+                        this.village.getGame().loadFromSaveID(player.getWorld(), args[1].strip());
+                    } else {
+                        this.village.getGame().loadFromSaveID(player.getWorld(), player.getWorld().getName());
+                    }
+                    player.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Loaded world config!"));
+                    break;
+                case "tasks-needed":
+                    int tasksNeeded = Integer.valueOf(args[1].strip());
+                    if (this.village.getGame().setTasksPerVillager(tasksNeeded)) {
+                        player.sendMessage(Utils.formatText("&a&l[Village]&r&a Updated needed task count."));
+                    } else {
+                        player.sendMessage(
+                                Utils.formatText("&c&l[Village]&r&c Failed to update needed task count. Max value: &c&l"
+                                        + this.village.getGame().getVillagerTasks().size()));
+                    }
+                    break;
+                case "kill-cooldown":
+                    long killCooldown = Long.valueOf(args[1].strip());
+                    this.village.getGame().setKillCooldown(killCooldown);
+                    player.sendMessage(Utils.formatText("&a&l[Village]&r&a Updated kill cooldown."));
+                    break;
+                case "discussion-time":
+                    long discussionTime = Long.valueOf(args[1].strip());
+                    this.village.getGame().setDiscussionTime(discussionTime);
+                    player.sendMessage(Utils.formatText("&a&l[Village]&r&a Updated discussion time."));
+                    break;
+                case "voting-time":
+                    long votingTime = Long.valueOf(args[1].strip());
+                    this.village.getGame().setVotingTime(votingTime);
+                    player.sendMessage(Utils.formatText("&a&l[Village]&r&a Updated voting time."));
+                    break;
+                case "button-time":
+                    long buttonTime = Long.valueOf(args[1].strip());
+                    this.village.getGame().setMeetingButtonCooldown(buttonTime);
+                    player.sendMessage(Utils.formatText("&a&l[Village]&r&a Updated button cooldown."));
+                    break;
+                case "max-button":
+                    int uses = Integer.valueOf(args[1].strip());
+                    this.village.getGame().setMaxMeetingButtonUses(uses);
+                    player.sendMessage(Utils.formatText("&a&l[Village]&r&a Updated max button uses."));
+                    break;
+                case "task-win":
+                    if (!this.village.getGame().canWinOnTasks()) {
+                        this.village.getGame().setAllowTaskWin(true);
+                        player.sendMessage(
+                                Utils.formatText("&a&l[Village]&r&a Allowing Task Completion win condition."));
+                    } else {
+                        this.village.getGame().setAllowTaskWin(false);
+                        player.sendMessage(
+                                Utils.formatText("&a&l[Village]&r&a Ignoring Task Completion win condition."));
+                    }
+                case "ability-cooldown":
+                    long abilityCooldown = Long.valueOf(args[1].strip());
+                    this.village.getGame().setAbilityCooldown(abilityCooldown);
+                    player.sendMessage(Utils.formatText("&a&l[Village]&r&a Updated ability cooldown."));
+                    break;
+                default:
+                    break;
+            }
+        } catch (ArrayIndexOutOfBoundsException ex) {
+            player.sendMessage(Utils.formatText("&c&l[VILLAGE]&r&c Invalid command usage. Use &l/village&r&c to check usage."));
         }
 
         return false;

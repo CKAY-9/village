@@ -29,6 +29,8 @@ import org.bukkit.potion.PotionEffectType;
 import ca.ckay9.Storage;
 import ca.ckay9.Utils;
 import ca.ckay9.Village;
+import ca.ckay9.Game.Commands.VoteCommand;
+import ca.ckay9.Game.Commands.VoteCompletor;
 import ca.ckay9.Game.Interactions.BodyInteract;
 import ca.ckay9.Game.Interactions.MagicWandInteract;
 import ca.ckay9.Game.Interactions.MeetingButtonInteract;
@@ -118,6 +120,9 @@ public class Game {
         manager.registerEvents(new PlayerLeave(this, village.getEditor()), village);
         manager.registerEvents(new PlayerJoin(this), village);
         manager.registerEvents(new MagicWandInteract(this), village);
+
+        village.getCommand("vote").setExecutor(new VoteCommand(this));
+        village.getCommand("vote").setTabCompleter(new VoteCompletor());
     }
 
     /**
@@ -204,14 +209,21 @@ public class Game {
         return this.votes;
     }
 
-    public void addVote(UUID uuid, UUID voter) {
-        ArrayList<UUID> arr = this.getVotes().get(uuid);
+    /**
+     * Adds voter to whoToVoteFor's vote array. Doesn't clear previous entries of
+     * voter.
+     * 
+     * @param whoToVoteFor Player who is getting voted
+     * @param voter        Player who is voting
+     */
+    public void addVote(UUID whoToVoteFor, UUID voter) {
+        ArrayList<UUID> arr = this.getVotes().get(whoToVoteFor);
         if (arr == null) {
             arr = new ArrayList<>();
         }
 
         arr.add(voter);
-        this.getVotes().put(uuid, arr);
+        this.getVotes().put(whoToVoteFor, arr);
     }
 
     public boolean hasAlreadyVotedForThisPlayer(UUID uuid, UUID voter) {
@@ -412,7 +424,8 @@ public class Game {
      */
     public void setPlayerToVillager(Player player) {
         player.getInventory().clear();
-        if (!this.getPlayerRoles().containsValue(Role.DETECTIVE) || this.getPlayerRole(player.getUniqueId()) == Role.DETECTIVE) {
+        if (!this.getPlayerRoles().containsValue(Role.DETECTIVE)
+                || this.getPlayerRole(player.getUniqueId()) == Role.DETECTIVE) {
             this.setPlayerRole(player.getUniqueId(), Role.DETECTIVE);
 
             ItemStack clock = new ItemStack(Material.CLOCK);
@@ -425,7 +438,8 @@ public class Game {
             player.sendTitle(Utils.formatText("&a&lDETECTIVE"),
                     Utils.formatText("You are a &a&lDecective&r. Can inspect bodies and kill one &a&lVillager."), 20,
                     80, 20);
-        } else if (!this.getPlayerRoles().containsValue(Role.MEDIC) || this.getPlayerRole(player.getUniqueId()) == Role.MEDIC) {
+        } else if (!this.getPlayerRoles().containsValue(Role.MEDIC)
+                || this.getPlayerRole(player.getUniqueId()) == Role.MEDIC) {
             this.setPlayerRole(player.getUniqueId(), Role.MEDIC);
 
             ItemStack goldenCarrot = new ItemStack(Material.GOLDEN_CARROT);
@@ -471,7 +485,8 @@ public class Game {
      */
     public void setPlayerToMob(Player player) {
         player.getInventory().clear();
-        if (!this.getPlayerRoles().containsValue(Role.SWEEPER) || this.getPlayerRole(player.getUniqueId()) == Role.SWEEPER) {
+        if (!this.getPlayerRoles().containsValue(Role.SWEEPER)
+                || this.getPlayerRole(player.getUniqueId()) == Role.SWEEPER) {
             this.setPlayerRole(player.getUniqueId(), Role.SWEEPER);
 
             ItemStack broom = new ItemStack(Material.NETHERITE_SHOVEL);
@@ -483,7 +498,8 @@ public class Game {
             Utils.verbosePlayerLog(player, "Changed to sweeper.");
             player.sendTitle(Utils.formatText("&c&lSWEEPER"),
                     Utils.formatText("You are a &c&lSweeper&r. Can kill and hide &a&lVillagers."), 20, 80, 20);
-        } else if (!this.getPlayerRoles().containsValue(Role.DARK_WIZARD) || this.getPlayerRole(player.getUniqueId()) == Role.DARK_WIZARD) {
+        } else if (!this.getPlayerRoles().containsValue(Role.DARK_WIZARD)
+                || this.getPlayerRole(player.getUniqueId()) == Role.DARK_WIZARD) {
             this.setPlayerRole(player.getUniqueId(), Role.DARK_WIZARD);
 
             ItemStack wand = new ItemStack(Material.NETHERITE_HOE);
@@ -554,7 +570,7 @@ public class Game {
      * 
      * @param player
      */
-    public void voteOutPlayer(Player player) {
+    public void evictPlayer(Player player) {
         player.setGameMode(GameMode.SPECTATOR);
         player.sendTitle(Utils.formatText("&c&lVOTED OUT"),
                 Utils.formatText("You have been evicted by the &a&lVillagers"), 20, 80, 20);
@@ -708,20 +724,27 @@ public class Game {
             boolean tie = false;
             Map.Entry<UUID, ArrayList<UUID>> highest = null;
             for (Map.Entry<UUID, ArrayList<UUID>> entry : this.getVotes().entrySet()) {
-                Player player = Bukkit.getPlayer(entry.getKey());
-                if (player == null) {
-                    // disconnected or something else
-                    continue;
-                }
+                UUID uuid = entry.getKey();
+                if (uuid.equals(Game.getSkipVoteUUID())) {
+                    Bukkit.broadcastMessage(
+                            Utils.formatText("&d - &lSKIP&r&d: &9&l" + entry.getValue().size()));
+                    Utils.verboseLog("Skip Votes = " + entry.getValue().size());
+                } else {
+                    Player player = Bukkit.getPlayer(uuid);
+                    if (player == null) {
+                        // disconnected or something else
+                        continue;
+                    }
 
-                // reset killer cooldowns
-                if (!this.isPlayerVillager(player)) {
-                    this.addKillCooldown(player.getUniqueId(), this.getKillCooldown());
-                }
+                    // reset killer cooldowns
+                    if (!this.isPlayerVillager(player)) {
+                        this.addKillCooldown(player.getUniqueId(), this.getKillCooldown());
+                    }
 
-                Bukkit.broadcastMessage(
-                        Utils.formatText("&3 - &l" + player.getName() + "&r&3: &b&l" + entry.getValue().size()));
-                Utils.verbosePlayerLog(player, "Votes = " + entry.getValue().size());
+                    Bukkit.broadcastMessage(
+                            Utils.formatText("&3 - &l" + player.getName() + "&r&3: &b&l" + entry.getValue().size()));
+                    Utils.verbosePlayerLog(player, "Votes = " + entry.getValue().size());
+                }
 
                 if (highest == null) {
                     highest = entry;
@@ -737,14 +760,21 @@ public class Game {
             }
 
             if (highest != null && !tie) {
-                Player votedOut = Bukkit.getPlayer(highest.getKey());
-                if (votedOut != null) {
+                if (highest.getKey().equals(Game.getSkipVoteUUID())) {
                     Bukkit.broadcastMessage(
-                            Utils.formatText("&b&l[MEETING] " + votedOut.getName() + "&r&b has been voted out."));
-                    Utils.verbosePlayerLog(votedOut, "Has been voted out.\n  -> votes = " + highest.getValue().size());
-                }
+                            Utils.formatText("&b&l[MEETING] Voting has been skipped."));
+                    Utils.verboseLog("Meeting voting skipped.");
+                } else {
+                    Player votedOut = Bukkit.getPlayer(highest.getKey());
+                    if (votedOut != null) {
+                        Bukkit.broadcastMessage(
+                                Utils.formatText("&b&l[MEETING] " + votedOut.getName() + "&r&b has been voted out."));
+                        Utils.verbosePlayerLog(votedOut,
+                                "Has been voted out.\n  -> votes = " + highest.getValue().size());
 
-                this.voteOutPlayer(votedOut);
+                        this.evictPlayer(votedOut);
+                    }
+                }
             }
 
             this.clearVotes();
@@ -932,6 +962,15 @@ public class Game {
     }
 
     /**
+     * Returns a 0 UUID that is used for skip voting
+     * 
+     * @return A 0 UUID object
+     */
+    public static UUID getSkipVoteUUID() {
+        return new UUID(0L, 0L);
+    }
+
+    /**
      * Attempt to get the vent at the given location
      * 
      * @param location Where to check for a vent
@@ -991,6 +1030,54 @@ public class Game {
         }
 
         return null;
+    }
+
+    /**
+     * Set a players vote to whoToVoteFor. Will handle if they voted for them
+     * previously or someone else previously.
+     * 
+     * @param whoToVoteFor The player who is getting voted
+     * @param voter        The player who is voting
+     */
+    public void voteForPlayer(Player whoToVoteFor, Player voter) {
+        UUID playerUUID = voter.getUniqueId();
+        UUID targetUUID = whoToVoteFor.getUniqueId();
+
+        if (this.hasAlreadyVotedForThisPlayer(targetUUID, playerUUID)) {
+            this.clearPreviousPlayerVotes(playerUUID);
+            Utils.verbosePlayerLog(voter,
+                    "Removed their vote from player " + whoToVoteFor.getName() + " (" + targetUUID + ")");
+            voter.sendMessage(
+                    Utils.formatText("&e&l[MEETING]&r&e You removed your vote from &l" + whoToVoteFor.getName()));
+        } else {
+            this.clearPreviousPlayerVotes(playerUUID);
+            Utils.verbosePlayerLog(voter, "Voted for player " + whoToVoteFor.getName() + " (" + targetUUID + ")");
+            this.addVote(targetUUID, playerUUID);
+            voter.sendMessage(Utils.formatText("&e&l[MEETING]&r&e You voted for &l" + whoToVoteFor.getName()));
+        }
+    }
+
+    /**
+     * Sets a players vote to 0000, the skip UUID. Should this be something else,
+     * maybe.
+     * 
+     * @param voter Who the vote skip
+     */
+    public void voteForSkip(Player voter) {
+        UUID playerUUID = voter.getUniqueId();
+
+        if (this.hasAlreadyVotedForThisPlayer(Game.getSkipVoteUUID(), playerUUID)) {
+            this.clearPreviousPlayerVotes(playerUUID);
+            Utils.verbosePlayerLog(voter,
+                    "Removed their skip vote");
+            voter.sendMessage(
+                    Utils.formatText("&e&l[MEETING]&r&e You removed your skip vote"));
+        } else {
+            this.clearPreviousPlayerVotes(playerUUID);
+            Utils.verbosePlayerLog(voter, "Voted for skip)");
+            this.addVote(Game.getSkipVoteUUID(), playerUUID);
+            voter.sendMessage(Utils.formatText("&e&l[MEETING]&r&e You voted for skip"));
+        }
     }
 
     /**

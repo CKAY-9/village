@@ -30,12 +30,21 @@ public class MeetingButtonInteract implements Listener {
         }
 
         event.setCancelled(true);
-        if (!this.game.isGameInProgress() || this.game.getGameStatus() != Status.PLAYING) {
+        if (!this.game.isGameInProgress()) {
+            return;
+        }
+
+        if (this.game.getGameStatus() != Status.PLAYING && !this.game.ableToVote()) {
             return;
         }
 
         Player player = event.getPlayer();
         if (this.game.isPlayerDead(player)) {
+            return;
+        }
+
+        if (this.game.ableToVote()) {
+            this.game.voteForSkip(player);
             return;
         }
 
