@@ -143,21 +143,29 @@ public class VillageCommand implements CommandExecutor {
                     break;
                 case "save":
                     player.sendMessage(Utils.formatText("&e&l[VILLAGE]&r&e Saving world config..."));
-                    if (args.length == 2) {
-                        this.village.getGame().saveCurrentGameConfig(args[1].strip());
-                    } else {
-                        this.village.getGame().saveCurrentGameConfig(player.getWorld().getName());
+                    String saveTargetID = player.getWorld().getName();
+                    if (args.length >= 2) {
+                        saveTargetID = args[1].strip();
                     }
-                    player.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Saved world config!"));
+
+                    if (this.village.getGame().saveCurrentGameConfig(saveTargetID)) {
+                        player.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Loaded " + saveTargetID + " config."));
+                    } else {
+                        player.sendMessage(Utils.formatText("&c&l[VILLAGE]&r&c Failed to load " + saveTargetID + " config!"));
+                    }
                     break;
                 case "load":
                     player.sendMessage(Utils.formatText("&e&l[VILLAGE]&r&e Loading world config..."));
-                    if (args.length == 2) {
-                        this.village.getGame().loadFromSaveID(player.getWorld(), args[1].strip());
-                    } else {
-                        this.village.getGame().loadFromSaveID(player.getWorld(), player.getWorld().getName());
+                    String loadTargetID = player.getWorld().getName();
+                    if (args.length >= 2) {
+                        loadTargetID = args[1].strip();
                     }
-                    player.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Loaded world config!"));
+
+                    if (this.village.getGame().loadFromSaveID(player.getWorld(), loadTargetID)) {
+                        player.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Loaded " + loadTargetID + " config."));
+                    } else {
+                        player.sendMessage(Utils.formatText("&c&l[VILLAGE]&r&c Failed to load " + loadTargetID + " config!"));
+                    }
                     break;
                 case "tasks-needed":
                     int tasksNeeded = Integer.valueOf(args[1].strip());

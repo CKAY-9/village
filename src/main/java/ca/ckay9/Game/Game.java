@@ -1323,10 +1323,17 @@ public class Game {
         return true;
     }
 
-    public void loadFromSaveID(World world, String id) {
+    /**
+     * Attempts to load a saved config by its ID
+     * 
+     * @param world The world to load the config in
+     * @param id The id of the config
+     * @return True if successful, false if otherwise
+     */
+    public boolean loadFromSaveID(World world, String id) {
         ConfigurationSection section = Storage.worldsData.getConfigurationSection("saved." + id);
         if (section == null) {
-            return;
+            return false;
         }
 
         Utils.verboseLog("Loading gameplay values...");
@@ -1376,6 +1383,7 @@ public class Game {
 
         ConfigurationSection savedVents = section.getConfigurationSection("vents");
         if (savedVents != null) {
+            this.getMobVents().clear();
             Utils.verboseLog("Loading saved vents...");
 
             // first load all vents
@@ -1439,5 +1447,8 @@ public class Game {
 
             Utils.verboseLog("Loaded saved vent systems!");
         }
+
+        return true;
     }
+
 }
