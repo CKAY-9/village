@@ -1426,7 +1426,7 @@ public class Game {
                     }
 
                     Location loc = new Location(world, (int) pos.getDouble("x"), (int) pos.getDouble("y"),
-                            (int) pos.getDouble("y"));
+                            (int) pos.getDouble("z"));
                     Vent linkVent = this.getVentAtLocation(loc);
                     if (linkVent == null) {
                         continue;
