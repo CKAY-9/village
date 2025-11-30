@@ -357,16 +357,18 @@ public class Game {
      * the max possible amount of tasks.
      * 
      * @param value The value to set
+     * @return true if successful, false if went over max
      */
-    public void setTasksPerVillager(int value) {
+    public boolean setTasksPerVillager(int value) {
         int maxValue = this.getVillagerTasks().size();
         if (value > maxValue) {
             Utils.verboseLog("Attempted to set tasksPerVillager above max value.\n  -> max = " + maxValue
                     + "\n  -> attempted value = " + value);
-            return;
+            return false;
         }
 
         this.tasksPerVillager = value;
+        return true;
     }
 
     /**
@@ -393,7 +395,7 @@ public class Game {
      */
     public void setPlayerToVillager(Player player) {
         player.getInventory().clear();
-        if (!this.getPlayerRoles().containsValue(Role.DETECTIVE)) {
+        if (!this.getPlayerRoles().containsValue(Role.DETECTIVE) || this.getPlayerRole(player.getUniqueId()) == Role.DETECTIVE) {
             this.setPlayerRole(player.getUniqueId(), Role.DETECTIVE);
 
             ItemStack clock = new ItemStack(Material.CLOCK);
@@ -406,7 +408,7 @@ public class Game {
             player.sendTitle(Utils.formatText("&a&lDETECTIVE"),
                     Utils.formatText("You are a &a&lDecective&r. Can inspect bodies and kill one &a&lVillager."), 20,
                     80, 20);
-        } else if (!this.getPlayerRoles().containsValue(Role.MEDIC)) {
+        } else if (!this.getPlayerRoles().containsValue(Role.MEDIC) || this.getPlayerRole(player.getUniqueId()) == Role.MEDIC) {
             this.setPlayerRole(player.getUniqueId(), Role.MEDIC);
 
             ItemStack goldenCarrot = new ItemStack(Material.GOLDEN_CARROT);
@@ -452,7 +454,7 @@ public class Game {
      */
     public void setPlayerToMob(Player player) {
         player.getInventory().clear();
-        if (!this.getPlayerRoles().containsValue(Role.SWEEPER)) {
+        if (!this.getPlayerRoles().containsValue(Role.SWEEPER) || this.getPlayerRole(player.getUniqueId()) == Role.SWEEPER) {
             this.setPlayerRole(player.getUniqueId(), Role.SWEEPER);
 
             ItemStack broom = new ItemStack(Material.NETHERITE_SHOVEL);
@@ -464,7 +466,7 @@ public class Game {
             Utils.verbosePlayerLog(player, "Changed to sweeper.");
             player.sendTitle(Utils.formatText("&c&lSWEEPER"),
                     Utils.formatText("You are a &c&lSweeper&r. Can kill and hide &a&lVillagers."), 20, 80, 20);
-        } else if (!this.getPlayerRoles().containsValue(Role.DARK_WIZARD)) {
+        } else if (!this.getPlayerRoles().containsValue(Role.DARK_WIZARD) || this.getPlayerRole(player.getUniqueId()) == Role.DARK_WIZARD) {
             this.setPlayerRole(player.getUniqueId(), Role.DARK_WIZARD);
 
             ItemStack hoe = new ItemStack(Material.NETHERITE_HOE);
@@ -1146,6 +1148,7 @@ public class Game {
             Storage.worldsData.set(root + "buttonTime", this.getMeetingButtonCooldown());
             Storage.worldsData.set(root + "maxButtons", this.getMaxMeetingButtonUses());
             Storage.worldsData.set(root + "taskWin", this.canWinOnTasks());
+            Storage.worldsData.set(root + "abilityCooldown", this.getAbilityCooldown());
             Utils.verboseLog("Saved gameplay values!");
 
             int i = 0;
@@ -1223,6 +1226,7 @@ public class Game {
         this.setMeetingButtonCooldown(section.getLong("buttonTime", this.getMeetingButtonCooldown()));
         this.setMaxMeetingButtonUses(section.getInt("maxButtons", this.getMaxMeetingButtonUses()));
         this.setAllowTaskWin(section.getBoolean("taskWin", this.canWinOnTasks()));
+        this.setAbilityCooldown(section.getLong("abilityCooldown", 500));
         Utils.verboseLog("Loaded gameplay values!");
 
         this.setSpawnLocation(new Location(

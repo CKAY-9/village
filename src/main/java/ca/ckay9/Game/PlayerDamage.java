@@ -47,7 +47,7 @@ public class PlayerDamage implements Listener {
         Role damagerRole = this.game.getPlayerRole(damager.getUniqueId());
         boolean villagerTriedToKill = this.game.isPlayerVillager(damager) && damagerRole != Role.DETECTIVE;
         boolean onCooldown = existingCooldown != null && existingCooldown > 0;
-        boolean mobTriedToKillMob = !this.game.isPlayerVillager(damaged);
+        boolean mobTriedToKillMob = !this.game.isPlayerVillager(damaged) && damagerRole != Role.DETECTIVE;
         if (villagerTriedToKill || onCooldown || mobTriedToKillMob) {
             return;
         }
@@ -76,7 +76,7 @@ public class PlayerDamage implements Listener {
                     Utils.formatText("Detective &a&l" + damager.getName() + "&r has killed you"), 20, 80, 20);
         } else {
             damaged.sendTitle(Utils.formatText("&c&lKILLED"),
-                Utils.formatText("You have been killed by &c&l" + damager.getName()), 20, 80, 20);
+                    Utils.formatText("You have been killed by &c&l" + damager.getName()), 20, 80, 20);
         }
 
         this.game.addKillCooldown(damager.getUniqueId(), this.game.getKillCooldown());

@@ -43,6 +43,7 @@ public class VillageCompletor implements TabCompleter {
                     options.add("button-time");
                     options.add("max-button");
                     options.add("task-win");
+                    options.add("ability-cooldown");
                 } else {
                     options.add("end");
                     options.add("force-villager");

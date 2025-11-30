@@ -7,9 +7,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.CompassMeta;
 
 /*
-
     This is responsible for the main game loop of Village. Keeps track of timings and everything related to the gameplay.
-
 */
 public class GameLoop implements Runnable {
     private Game game;
@@ -48,14 +46,18 @@ public class GameLoop implements Runnable {
 
             if (item.getType() == Material.COMPASS) {
                 CompassMeta meta = (CompassMeta) item.getItemMeta();
+                double distance = 0;
                 for (Player p : Bukkit.getOnlinePlayers()) {
                     if (!this.game.isPlayerVillager(p)) {
+                        distance = meta.getLodestone().distance(p.getLocation());
                         meta.setLodestone(p.getLocation());
                         break;
                     }
                 }
 
-                item.setItemMeta(meta);
+                if (distance < 3) {
+                    item.setItemMeta(meta);
+                }
             }
         }
     }

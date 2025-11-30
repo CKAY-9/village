@@ -104,6 +104,8 @@ public class VillageCommand implements CommandExecutor {
                     "&a - max-button (number: required): Set the max amount of button pressed per Villager"));
             player.sendMessage(Utils.formatText(
                     "&a - task-win: Toggle allowing Villagers to win on task compleition"));
+            player.sendMessage(Utils.formatText(
+                    "&a - ability-cooldown (number: required, ticks): Set the abilitiy cooldown in ticks"));
             return false;
         }
 
@@ -158,8 +160,13 @@ public class VillageCommand implements CommandExecutor {
                 break;
             case "tasks-needed":
                 int tasksNeeded = Integer.valueOf(args[1].strip());
-                this.village.getGame().setTasksPerVillager(tasksNeeded);
-                player.sendMessage(Utils.formatText("&a&l[Village]&r&a Updated needed task count."));
+                if (this.village.getGame().setTasksPerVillager(tasksNeeded)) {
+                    player.sendMessage(Utils.formatText("&a&l[Village]&r&a Updated needed task count."));
+                } else {
+                    player.sendMessage(
+                            Utils.formatText("&c&l[Village]&r&c Failed to update needed task count. Max value: &c&l"
+                                    + this.village.getGame().getVillagerTasks().size()));
+                }
                 break;
             case "kill-cooldown":
                 long killCooldown = Long.valueOf(args[1].strip());
@@ -194,7 +201,11 @@ public class VillageCommand implements CommandExecutor {
                     this.village.getGame().setAllowTaskWin(false);
                     player.sendMessage(Utils.formatText("&a&l[Village]&r&a Ignoring Task Completion win condition."));
                 }
-
+            case "ability-cooldown":
+                long abilityCooldown = Long.valueOf(args[1].strip());
+                this.village.getGame().setAbilityCooldown(abilityCooldown);
+                player.sendMessage(Utils.formatText("&a&l[Village]&r&a Updated ability cooldown."));
+                break;
             default:
                 break;
         }
