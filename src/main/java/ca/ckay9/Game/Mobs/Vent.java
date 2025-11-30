@@ -1,4 +1,4 @@
-package ca.ckay9.Game;
+package ca.ckay9.Game.Mobs;
 
 import java.util.ArrayList;
 import java.util.HashSet;

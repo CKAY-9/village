@@ -1,4 +1,4 @@
-package ca.ckay9.Game;
+package ca.ckay9.Game.Listeners;
 
 import org.bukkit.GameMode;
 import org.bukkit.event.EventHandler;
@@ -7,6 +7,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 
 import ca.ckay9.Utils;
+import ca.ckay9.Game.Game;
 
 public class PlayerJoin implements Listener {
     private Game game;

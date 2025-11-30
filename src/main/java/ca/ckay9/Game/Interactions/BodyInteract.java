@@ -1,4 +1,4 @@
-package ca.ckay9.Game;
+package ca.ckay9.Game.Interactions;
 
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -13,6 +13,8 @@ import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.inventory.ItemStack;
 
 import ca.ckay9.Utils;
+import ca.ckay9.Game.Game;
+import ca.ckay9.Game.Role;
 
 public class BodyInteract implements Listener {
     private Game game;

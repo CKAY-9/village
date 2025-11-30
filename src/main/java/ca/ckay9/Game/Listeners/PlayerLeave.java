@@ -1,4 +1,4 @@
-package ca.ckay9.Game;
+package ca.ckay9.Game.Listeners;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -7,6 +7,9 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 import ca.ckay9.Editor.Editor;
+import ca.ckay9.Game.Game;
+import ca.ckay9.Game.Mobs.Vent;
+import ca.ckay9.Game.Villagers.VillagerTask;
 
 public class PlayerLeave implements Listener {
     private Game game;

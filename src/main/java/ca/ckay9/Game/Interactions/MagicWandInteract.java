@@ -1,4 +1,4 @@
-package ca.ckay9.Game;
+package ca.ckay9.Game.Interactions;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,6 +15,9 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 
 import ca.ckay9.Utils;
+import ca.ckay9.Game.Game;
+import ca.ckay9.Game.Role;
+import ca.ckay9.Game.Status;
 
 public class MagicWandInteract implements Listener {
     private Game game;

@@ -1,4 +1,4 @@
-package ca.ckay9.Game;
+package ca.ckay9.Game.Interactions;
 
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
@@ -15,6 +15,8 @@ import org.bukkit.potion.PotionEffectType;
 
 import ca.ckay9.Utils;
 import ca.ckay9.Village;
+import ca.ckay9.Game.Game;
+import ca.ckay9.Game.Mobs.Vent;
 
 public class VentInteract implements Listener {
     private Game game;

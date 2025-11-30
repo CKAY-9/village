@@ -1,4 +1,4 @@
-package ca.ckay9.Game;
+package ca.ckay9.Game.Interactions;
 
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
@@ -8,6 +8,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 
 import ca.ckay9.Utils;
+import ca.ckay9.Game.Game;
+import ca.ckay9.Game.Status;
 
 public class MeetingButtonInteract implements Listener {
     private Game game;

@@ -1,4 +1,4 @@
-package ca.ckay9.Game;
+package ca.ckay9.Game.Villagers;
 
 import org.bukkit.Material;
 

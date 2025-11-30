@@ -1,4 +1,4 @@
-package ca.ckay9.Game;
+package ca.ckay9.Game.Listeners;
 
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -6,6 +6,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerMoveEvent;
+
+import ca.ckay9.Game.Game;
 
 public class PlayerMove implements Listener {
     private Game game;

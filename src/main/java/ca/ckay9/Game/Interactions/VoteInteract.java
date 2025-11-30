@@ -1,4 +1,4 @@
-package ca.ckay9.Game;
+package ca.ckay9.Game.Interactions;
 
 import java.util.UUID;
 
@@ -10,6 +10,7 @@ import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.inventory.EquipmentSlot;
 
 import ca.ckay9.Utils;
+import ca.ckay9.Game.Game;
 
 public class VoteInteract implements Listener {
     private Game game;

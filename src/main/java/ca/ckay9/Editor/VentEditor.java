@@ -18,7 +18,7 @@ import org.bukkit.inventory.PlayerInventory;
 
 import ca.ckay9.Utils;
 import ca.ckay9.Game.Game;
-import ca.ckay9.Game.Vent;
+import ca.ckay9.Game.Mobs.Vent;
 
 public class VentEditor implements Listener {
     private Editor editor;

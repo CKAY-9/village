@@ -1,4 +1,4 @@
-package ca.ckay9.Game;
+package ca.ckay9.Game.Interactions;
 
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -14,6 +14,11 @@ import org.bukkit.inventory.ItemStack;
 
 import ca.ckay9.Utils;
 import ca.ckay9.Village;
+import ca.ckay9.Game.Game;
+import ca.ckay9.Game.Villagers.ChatTaskProgress;
+import ca.ckay9.Game.Villagers.CraftTaskProgress;
+import ca.ckay9.Game.Villagers.VillagerTask;
+import ca.ckay9.Game.Villagers.VillagerTaskType;
 
 public class VillagerTaskInteract implements Listener {
     private Game game;

@@ -1,9 +1,11 @@
-package ca.ckay9.Game;
+package ca.ckay9.Game.Listeners;
 
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerDropItemEvent;
+
+import ca.ckay9.Game.Game;
 
 public class PlayerDropItem implements Listener {
     private Game game;

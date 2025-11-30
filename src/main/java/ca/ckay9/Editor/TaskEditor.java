@@ -12,8 +12,8 @@ import org.bukkit.event.block.BlockPlaceEvent;
 
 import ca.ckay9.Utils;
 import ca.ckay9.Game.Game;
-import ca.ckay9.Game.VillagerTask;
-import ca.ckay9.Game.VillagerTaskType;
+import ca.ckay9.Game.Villagers.VillagerTask;
+import ca.ckay9.Game.Villagers.VillagerTaskType;
 
 public class TaskEditor implements Listener {
     private Editor editor;

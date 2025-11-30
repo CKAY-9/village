@@ -1,4 +1,4 @@
-package ca.ckay9.Game;
+package ca.ckay9.Game.Villagers;
 
 import java.util.HashMap;
 import java.util.Random;
@@ -11,6 +11,7 @@ import org.bukkit.inventory.ItemStack;
 
 import ca.ckay9.Utils;
 import ca.ckay9.Village;
+import ca.ckay9.Game.Game;
 
 public class VillagerTask {
     private Block block;

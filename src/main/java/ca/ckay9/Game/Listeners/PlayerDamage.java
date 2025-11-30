@@ -1,4 +1,4 @@
-package ca.ckay9.Game;
+package ca.ckay9.Game.Listeners;
 
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -15,6 +15,9 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 
 import ca.ckay9.Utils;
+import ca.ckay9.Game.Game;
+import ca.ckay9.Game.Role;
+import ca.ckay9.Game.Status;
 
 public class PlayerDamage implements Listener {
     private Game game;
