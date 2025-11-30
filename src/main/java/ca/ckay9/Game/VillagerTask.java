@@ -117,6 +117,10 @@ public class VillagerTask {
 
     }
 
+    public void unassignPlayer(UUID player) {
+        this.assignedVillagers.remove(player);
+    }
+
     /**
      * Attempts to start the task for the given player.
      * 

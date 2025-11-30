@@ -126,8 +126,9 @@ public class VillagerTaskInteract implements Listener {
              * golden carrots are used by medics
              */
             if (stack.getType() != Material.COMPASS &&
-                    stack.getType() != Material.WOODEN_SWORD &&
+                    stack.getType() != Material.NETHERITE_SWORD &&
                     stack.getType() != Material.CLOCK &&
+                    stack.getType() != Material.NETHERITE_HOE &&
                     stack.getType() != Material.GOLDEN_CARROT) {
                 stack.setAmount(0);
             }

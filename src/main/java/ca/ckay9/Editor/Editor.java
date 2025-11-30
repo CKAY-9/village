@@ -30,6 +30,12 @@ public class Editor {
         manager.registerEvents(this.taskEditor, village);
     }
 
+    
+    public boolean isPlayerEditing(Player player) {
+        EditorState state = this.getEditorStates().get(player.getUniqueId());
+        return state != null && (state == EditorState.TASK || state == EditorState.VENT);
+    }
+
     /**
      * Clears the players inventory, gives them the tools, and then sets their
      * editor status to VENT

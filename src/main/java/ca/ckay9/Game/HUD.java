@@ -57,18 +57,37 @@ public class HUD {
             devBorder.setScore(score--);
         }
 
-        Score roleText = objective.getScore(Utils.formatText("&8Role: &a&lVillager"));
+        Role role = this.game.getPlayerRole(player.getUniqueId());
+        Score roleText = objective.getScore(Utils.formatText("&8Role: &a&l" + role.toString()));
         if (!this.game.isPlayerVillager(player)) {
-            roleText = objective.getScore(Utils.formatText("&8Role: &c&lMob"));
+            roleText = objective.getScore(Utils.formatText("&8Role: &c&l" + role.toString()));
         }
-
+        
         roleText.setScore(score--);
 
-        if (!this.game.isPlayerVillager(player)) {
+        if (role == Role.DETECTIVE || role == Role.DARK_WIZARD || role == Role.MEDIC || role == Role.SWEEPER) {
+            Long cooldown = this.game.getAbilityCooldowns().get(player.getUniqueId());
+            if (cooldown == null) {
+                cooldown = this.game.getAbilityCooldown();
+                this.game.addAbilityCooldown(player.getUniqueId(), cooldown);
+            }
+
+            long inSeconds = Math.max(0, Math.round(cooldown / 20));
+            Score cooldownText = objective
+                    .getScore(Utils.formatText("&8Ability Cooldown: &e&l" + inSeconds + "s"));
+            if (inSeconds <= 0) {
+                cooldownText = objective
+                        .getScore(Utils.formatText("&e&lABILITY READY!"));
+            }
+
+            cooldownText.setScore(score--);
+        }
+
+        if (!this.game.isPlayerVillager(player) || role == Role.DETECTIVE) {
             Long cooldown = this.game.getKillCooldowns().get(player.getUniqueId());
             if (cooldown == null) {
-                cooldown = 0L;
-                this.game.addKillCooldown(player.getUniqueId(), 0L);
+                cooldown = this.game.getKillCooldown();
+                this.game.addKillCooldown(player.getUniqueId(), cooldown);
             }
 
             long inSeconds = Math.max(0, Math.round(cooldown / 20));

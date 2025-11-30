@@ -1,12 +1,16 @@
 package ca.ckay9.Game;
 
+import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
+import org.bukkit.inventory.ItemStack;
 
 import ca.ckay9.Utils;
 
@@ -38,14 +42,49 @@ public class BodyInteract implements Listener {
         }
 
         event.setCancelled(true);
+        // Utils.formatText("&c&lBODY&r | &c&l" + damaged.getName())
+        String prefix = Utils.formatText("&c&lBODY&r | &c&l");
+        String bodyPlayerName = armorStand.getCustomName().substring(prefix.length());
+        Player bodyPlayer = Bukkit.getPlayer(bodyPlayerName);
 
-        // TODO: check if using ability
+        ItemStack itemInHand = player.getInventory().getItemInMainHand();
+        if (itemInHand == null) {
+            itemInHand = player.getInventory().getItemInOffHand();
+        }
 
-        // clear body and start meeting
-        armorStand.teleport(new Location(armorStand.getLocation().getWorld(), 0, 0, 0));
-        armorStand.setInvulnerable(false);
-        armorStand.setInvisible(true);
-        armorStand.setHealth(0);
-        this.game.startDiscussion(player, "REPORT: " + armorStand.getCustomName());
+        Role role = this.game.getPlayerRole(player.getUniqueId());
+        if (itemInHand != null && (role != Role.VILLAGER || role != Role.MOB) && this.game.canUseAbility(player.getUniqueId())) {
+            // abilities that can be used on bodies
+            Material mat = itemInHand.getType();
+            this.game.addAbilityCooldown(player.getUniqueId(), this.game.getAbilityCooldown());
+            if (role == Role.SWEEPER && mat == Material.NETHERITE_SHOVEL) {
+                armorStand.teleport(new Location(armorStand.getLocation().getWorld(), 0, 0, 0));
+                armorStand.setInvulnerable(false);
+                armorStand.setInvisible(true);
+                armorStand.setHealth(0);
+                return;
+            }
+
+            if (role == Role.DETECTIVE && mat == Material.CLOCK && bodyPlayer != null) {
+                player.sendMessage(Utils.formatText("&e&l[T.O.D. CLOCK]&r&e Body has been dead for &e&l"
+                        + Utils.ticksToSeconds(this.game.getTimeOfDeathOfPlayer(bodyPlayer)) + "s"));
+                return;
+            }
+
+            if (role == Role.MEDIC && mat == Material.GOLDEN_CARROT && bodyPlayer != null) {
+                player.sendMessage(Utils.formatText("&b&l[MAGIC CARROT]&r&b Revived &a&lVillager."));
+                bodyPlayer.teleport(armorStand.getLocation());
+                bodyPlayer.setGameMode(GameMode.ADVENTURE);
+                armorStand.remove();
+                return;
+            }
+        } else {
+            // clear body and start meeting
+            armorStand.teleport(new Location(armorStand.getLocation().getWorld(), 0, 0, 0));
+            armorStand.setInvulnerable(false);
+            armorStand.setInvisible(true);
+            armorStand.setHealth(0);
+            this.game.startDiscussion(player, "REPORT: " + bodyPlayerName);
+        }
     }
 }

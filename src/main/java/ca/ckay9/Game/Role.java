@@ -6,5 +6,9 @@ public enum Role {
     MEDIC,
     MOB,
     SWEEPER,
-    DARK_WIZARD
+    DARK_WIZARD;
+
+    public String toString() {
+        return this.name().replace("_", " ");
+    }
 }

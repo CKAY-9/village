@@ -60,11 +60,11 @@ public class GameLoop implements Runnable {
         }
     }
 
-    private void mobOnTick(Player player) {
+    private void decreaseKillCooldownOnTick(Player player) {
         Long cooldown = this.game.getKillCooldowns().get(player.getUniqueId());
         if (cooldown == null) {
-            cooldown = 0L;
-            this.game.addKillCooldown(player.getUniqueId(), 0L);
+            cooldown = this.game.getKillCooldown();
+            this.game.addKillCooldown(player.getUniqueId(), cooldown);
         }
 
         if (cooldown > 0 && this.game.getGameStatus() == Status.PLAYING) {
@@ -95,7 +95,24 @@ public class GameLoop implements Runnable {
             if (this.game.isPlayerVillager(p)) {
                 villagerOnTick(p);
             } else {
-                mobOnTick(p);
+                decreaseKillCooldownOnTick(p);
+            }
+
+            Role role = this.game.getPlayerRole(p.getUniqueId());
+            if (role != null && (role != Role.VILLAGER || role != Role.MOB)) {
+                if (role == Role.DETECTIVE) {
+                    decreaseKillCooldownOnTick(p);
+                }
+
+                Long cooldown = this.game.getAbilityCooldowns().get(p.getUniqueId());
+                if (cooldown == null) {
+                    cooldown = this.game.getAbilityCooldown();
+                    this.game.addAbilityCooldown(p.getUniqueId(), cooldown);
+                }
+
+                if (cooldown > 0 && this.game.getGameStatus() == Status.PLAYING) {
+                    this.game.addAbilityCooldown(p.getUniqueId(), Math.max(0, cooldown - 1));
+                }
             }
 
             hud.drawHUD(p);

@@ -48,7 +48,10 @@ public class Game {
     private int gameLoopID; // ID to bukkit runnable
     private boolean completedAllTasks; // used to check for villager completion
     private HashMap<UUID, Long> killCooldowns; // keeps track of kill cooldowns for each mob
+    private HashMap<UUID, Long> abilityCooldowns; // keeps track of all ability cooldowns
+    private HashMap<UUID, Long> timeOfDeaths; // time of death for each player
     private long killCooldown; // how long do mobs have to wait inbetween kills in ticks
+    private long abilityCooldown; // how long do special roles have to wait before using their ability
     private long votingTime; // how long does the voting time last in ticks
     private long discussionTime; // how long do discussions last in ticks
     private HashMap<UUID, ArrayList<UUID>> votes; // used to keep track of each players votes and who voted for them
@@ -56,7 +59,7 @@ public class Game {
                                         // ticks
     private HashMap<UUID, Integer> buttonUses; // how many times a player has pressed the meeting button
     private int maxButtonUses; // how many times can each player use the button
-    public boolean allowTaskWin; // if set to true, villagers can win if they finish all their tasks
+    private boolean allowTaskWin; // if set to true, villagers can win if they finish all their tasks
 
     public Game(Village village) {
         this.village = village;
@@ -75,7 +78,9 @@ public class Game {
         this.gameLoopID = -1;
         this.completedAllTasks = false;
         this.killCooldowns = new HashMap<>();
+        this.abilityCooldowns = new HashMap<>();
         this.killCooldown = Utils.secondsToTicks(15);
+        this.abilityCooldown = Utils.secondsToTicks(15);
         this.votingTime = Utils.secondsToTicks(10);
         this.discussionTime = Utils.secondsToTicks(10);
         this.votes = new HashMap<>();
@@ -83,6 +88,7 @@ public class Game {
         this.maxButtonUses = 1;
         this.buttonUses = new HashMap<>();
         this.allowTaskWin = false;
+        this.timeOfDeaths = new HashMap<>();
 
         PluginManager manager = village.getServer().getPluginManager();
         manager.registerEvents(new VentInteract(this), village);
@@ -92,8 +98,9 @@ public class Game {
         manager.registerEvents(new PlayerMove(this), village);
         manager.registerEvents(new VoteInteract(this), village);
         manager.registerEvents(new MeetingButtonInteract(this), village);
-        manager.registerEvents(new PlayerLeave(this), village);
         manager.registerEvents(new PlayerDropItem(this), village);
+        manager.registerEvents(new PlayerLeave(this, village.getEditor()), village);
+        manager.registerEvents(new PlayerJoin(this), village);
     }
 
     /**
@@ -125,6 +132,43 @@ public class Game {
      */
     public long getDiscussionTime() {
         return this.discussionTime;
+    }
+
+    /**
+     * @param cooldownInTicks How long special roles have to wait before using their
+     *                        ability. Given in ticks (1sec = 20ticks)
+     */
+    public void setAbilityCooldown(long cooldownInTicks) {
+        this.abilityCooldown = cooldownInTicks;
+    }
+
+    public long getAbilityCooldown() {
+        return this.abilityCooldown;
+    }
+
+    public HashMap<UUID, Long> getAbilityCooldowns() {
+        return this.abilityCooldowns;
+    }
+
+    public void setAbilityCooldowns(HashMap<UUID, Long> cooldowns) {
+        this.abilityCooldowns = cooldowns;
+    }
+
+    /**
+     * @param uuid     Player to receive cooldown
+     * @param duration Duration of cooldown in ticks
+     */
+    public void addAbilityCooldown(UUID uuid, long duration) {
+        this.abilityCooldowns.put(uuid, duration);
+    }
+
+    /**
+     * @param uuid The player to check if they can use their ability
+     * @return True if they haven't used it yet or the cooldown is reset
+     */
+    public boolean canUseAbility(UUID uuid) {
+        Long cooldown = this.getAbilityCooldowns().get(uuid);
+        return (cooldown == null || cooldown.longValue() <= 0);
     }
 
     /**
@@ -160,6 +204,7 @@ public class Game {
 
     /**
      * Clears all instances of this player in the votes. Used to cast new votes
+     * 
      * @param voter Who to remove
      */
     public void clearPreviousPlayerVotes(UUID voter) {
@@ -196,6 +241,26 @@ public class Game {
 
     public void clearVotes() {
         this.votes.clear();
+    }
+
+    public HashMap<UUID, Long> getTimeOfDeaths() {
+        return this.timeOfDeaths;
+    }
+
+    public Long getTimeOfDeathOfPlayer(Player player) {
+        return this.timeOfDeaths.get(player.getUniqueId());
+    }
+
+    public void addTimeOfDeath(UUID uuid, long value) {
+        this.timeOfDeaths.put(uuid, value);
+    }
+
+    /**
+     * @param timeOfDeath The time of death in ticks
+     * @return The amount of time a player has been dead in ticks
+     */
+    public long timeSinceDeath(long timeOfDeath) {
+        return this.gameLoop.getTicksSinceStart() - timeOfDeath;
     }
 
     public long getKillCooldown() {
@@ -328,25 +393,53 @@ public class Game {
      */
     public void setPlayerToVillager(Player player) {
         player.getInventory().clear();
+        if (!this.getPlayerRoles().containsValue(Role.DETECTIVE)) {
+            this.setPlayerRole(player.getUniqueId(), Role.DETECTIVE);
+
+            ItemStack clock = new ItemStack(Material.CLOCK);
+            ItemMeta clockMeta = clock.getItemMeta();
+            clockMeta.setDisplayName(Utils.formatText("&lT.O.D. CLOCK / RIGHT CLICK BODIES TO SEE DEATH TIME"));
+            clock.setItemMeta(clockMeta);
+            player.getInventory().addItem(clock);
+
+            Utils.verbosePlayerLog(player, "Changed to detective.");
+            player.sendTitle(Utils.formatText("&a&lDETECTIVE"),
+                    Utils.formatText("You are a &a&lDecective&r. Can inspect bodies and kill one &a&lVillager."), 20,
+                    80, 20);
+        } else if (!this.getPlayerRoles().containsValue(Role.MEDIC)) {
+            this.setPlayerRole(player.getUniqueId(), Role.MEDIC);
+
+            ItemStack goldenCarrot = new ItemStack(Material.GOLDEN_CARROT);
+            ItemMeta goldenCarrotMeta = goldenCarrot.getItemMeta();
+            goldenCarrotMeta.setDisplayName(Utils.formatText("&lMAGICAL CARROT / RIGHT CLICK BODIES TO REVIVES"));
+            goldenCarrot.setItemMeta(goldenCarrotMeta);
+            player.getInventory().addItem(goldenCarrot);
+
+            Utils.verbosePlayerLog(player, "Changed to medic.");
+            player.sendTitle(Utils.formatText("&a&lMEDIC"),
+                    Utils.formatText("You are a &a&lMedic&r. Can revive dead &a&lVillagers."), 20, 80, 20);
+        } else {
+            this.setPlayerRole(player.getUniqueId(), Role.VILLAGER);
+
+            Utils.verbosePlayerLog(player, "Changed to villager.");
+            player.sendTitle(Utils.formatText("&a&lVILLAGER"),
+                    Utils.formatText("You are a &a&lVillager&r. Complete your tasks and evict the &c&lMobs&r."), 20, 80,
+                    20);
+        }
+
         for (PotionEffect effect : player.getActivePotionEffects()) {
             player.removePotionEffect(effect.getType());
         }
         player.setHealth(20);
         player.setSaturation(20);
 
-        Utils.verbosePlayerLog(player, "Changed to villager.");
         Collections.shuffle(this.getVillagerTasks());
         List<VillagerTask> selectedTasks = this.getVillagerTasks().subList(0, this.getTasksPerVillager());
         for (VillagerTask task : selectedTasks) {
             task.addAssignedVillager(player.getUniqueId());
         }
 
-        player.sendTitle(Utils.formatText("&a&lVILLAGER"),
-                Utils.formatText("You are a &a&lVillager&r. Complete your tasks and evict the &c&lMobs&r!"), 20,
-                80, 20);
         player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 10_000_000, 255, false, false, false));
-        this.setPlayerRole(player.getUniqueId(), Role.VILLAGER);
-
         player.setGameMode(GameMode.ADVENTURE);
         player.teleport(this.getSpawnLocation());
     }
@@ -359,17 +452,44 @@ public class Game {
      */
     public void setPlayerToMob(Player player) {
         player.getInventory().clear();
+        if (!this.getPlayerRoles().containsValue(Role.SWEEPER)) {
+            this.setPlayerRole(player.getUniqueId(), Role.SWEEPER);
+
+            ItemStack broom = new ItemStack(Material.NETHERITE_SHOVEL);
+            ItemMeta broomMeta = broom.getItemMeta();
+            broomMeta.setDisplayName(Utils.formatText("&lBROOM / RIGHT CLICK BODIES TO HIDE"));
+            broom.setItemMeta(broomMeta);
+            player.getInventory().addItem(broom);
+
+            Utils.verbosePlayerLog(player, "Changed to sweeper.");
+            player.sendTitle(Utils.formatText("&c&lSWEEPER"),
+                    Utils.formatText("You are a &c&lSweeper&r. Can kill and hide &a&lVillagers."), 20, 80, 20);
+        } else if (!this.getPlayerRoles().containsValue(Role.DARK_WIZARD)) {
+            this.setPlayerRole(player.getUniqueId(), Role.DARK_WIZARD);
+
+            ItemStack hoe = new ItemStack(Material.NETHERITE_HOE);
+            ItemMeta hoeMeta = hoe.getItemMeta();
+            hoeMeta.setDisplayName(Utils.formatText("&lMAGIC HOE / RIGHT CLICK TO SWAP PLAYERS"));
+            hoe.setItemMeta(hoeMeta);
+            player.getInventory().addItem(hoe);
+
+            Utils.verbosePlayerLog(player, "Changed to dark wizard.");
+            player.sendTitle(Utils.formatText("&c&lDARK WIZARD"),
+                    Utils.formatText("You are a &c&lDark Wizard&r. Can kill and swap locations of &a&lVillagers&r."),
+                    20, 80, 20);
+        } else {
+            this.setPlayerRole(player.getUniqueId(), Role.MOB);
+            Utils.verbosePlayerLog(player, "Changed to mob.");
+            player.sendTitle(Utils.formatText("&c&lMOB"),
+                    Utils.formatText("You are a &c&lMob&r. Kill all of the &as&lVillagers&r."),
+                    20, 80, 20);
+        }
+
         for (PotionEffect effect : player.getActivePotionEffects()) {
             player.removePotionEffect(effect.getType());
         }
         player.setHealth(20);
         player.setSaturation(20);
-
-        Utils.verbosePlayerLog(player, "Changed to mob.");
-
-        player.sendTitle(Utils.formatText("&c&lMOB"),
-                Utils.formatText("You are a &c&lMob&r. Kill all &a&lVillagers&r to win!"), 20, 80, 20);
-        this.setPlayerRole(player.getUniqueId(), Role.MOB);
 
         ItemStack knife = new ItemStack(Material.NETHERITE_SWORD, 1);
         ItemMeta knifeMeta = knife.getItemMeta();
@@ -545,8 +665,10 @@ public class Game {
         Utils.verboseLog("Started voting.");
 
         for (Player p : Bukkit.getOnlinePlayers()) {
-            p.setAllowFlight(false);
-            p.setFlying(false);
+            if (!this.isPlayerDead(p)) {
+                p.setAllowFlight(false);
+                p.setFlying(false);
+            }
         }
     }
 
@@ -574,7 +696,7 @@ public class Game {
                 }
 
                 // reset killer cooldowns
-                if (!isPlayerVillager(player)) {
+                if (!this.isPlayerVillager(player)) {
                     this.addKillCooldown(player.getUniqueId(), this.getKillCooldown());
                 }
 
@@ -749,6 +871,10 @@ public class Game {
 
     public Role getPlayerRole(UUID uuid) {
         return this.playerRoles.get(uuid);
+    }
+
+    public HashMap<UUID, Role> getPlayerRoles() {
+        return this.playerRoles;
     }
 
     public void giveVillagerMobCompass(Player player) {

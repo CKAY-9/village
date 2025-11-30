@@ -44,7 +44,8 @@ public class PlayerDamage implements Listener {
         Player damaged = (Player) event.getEntity();
 
         Long existingCooldown = this.game.getKillCooldowns().get(damager.getUniqueId());
-        boolean villagerTriedToKill = this.game.isPlayerVillager(damager);
+        Role damagerRole = this.game.getPlayerRole(damager.getUniqueId());
+        boolean villagerTriedToKill = this.game.isPlayerVillager(damager) && damagerRole != Role.DETECTIVE;
         boolean onCooldown = existingCooldown != null && existingCooldown > 0;
         boolean mobTriedToKillMob = !this.game.isPlayerVillager(damaged);
         if (villagerTriedToKill || onCooldown || mobTriedToKillMob) {
@@ -70,10 +71,16 @@ public class PlayerDamage implements Listener {
         equipment.setBoots(new ItemStack(Material.LEATHER_BOOTS));
 
         damaged.setGameMode(GameMode.SPECTATOR);
-        damaged.sendTitle(Utils.formatText("&c&lKILLED"),
+        if (damagerRole == Role.DETECTIVE) {
+            damaged.sendTitle(Utils.formatText("&c&lKILLED"),
+                    Utils.formatText("Detective &a&l" + damager.getName() + "&r has killed you"), 20, 80, 20);
+        } else {
+            damaged.sendTitle(Utils.formatText("&c&lKILLED"),
                 Utils.formatText("You have been killed by &c&l" + damager.getName()), 20, 80, 20);
+        }
 
         this.game.addKillCooldown(damager.getUniqueId(), this.game.getKillCooldown());
+        this.game.addTimeOfDeath(damaged.getUniqueId(), this.game.getGameLoop().getTicksSinceStart());
         this.game.checkWinCondition();
     }
 }
