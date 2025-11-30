@@ -80,7 +80,7 @@ of the three generic tasks but can be made to be whatever you want.
 
 ### Debugging
 
-Although a "secondary" feature, Village does offer a developer mode and verbose logging within the global config. Developer mode will ignore certain checks and similar things that would otherwise interfere with testing, make sure this is disabled if you just want to create and play Village. Verbose logging logs a large majority of interactions and things realting to Village, can be useful for debugging and knowing what's going on in-game. 
+Although a "secondary" feature, Village does offer a developer mode and verbose logging within the global config. Developer mode will ignore certain checks and similar things that would otherwise interfere with testing, make sure this is disabled if you just want to create and play Village. Verbose logging logs a large majority of interactions and things relating to Village, can be useful for debugging and knowing what's going on in-game. 
 
 ### Configuration
 
