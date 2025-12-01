@@ -170,13 +170,7 @@ public class VillageCommand implements CommandExecutor {
         }
 
         int tasksNeeded = Integer.valueOf(args[1].strip());
-        if (this.village.getGame().setTasksPerVillager(tasksNeeded)) {
-            sender.sendMessage(Utils.formatText("&a&l[Village]&r&a Updated needed task count."));
-        } else {
-            sender.sendMessage(
-                    Utils.formatText("&c&l[Village]&r&c Failed to update needed task count. Max value: &c&l"
-                            + this.village.getGame().getVillagerTasks().size()));
-        }
+        this.village.getGame().setTasksPerVillager(tasksNeeded);
     }
 
     private void handleMobCount(CommandSender sender, String[] args) {

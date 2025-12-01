@@ -31,7 +31,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
 
 import ca.ckay9.Storage;
 import ca.ckay9.Utils;
@@ -466,16 +465,14 @@ public class Game {
      * @param value The value to set
      * @return true if successful, false if went over max
      */
-    public boolean setTasksPerVillager(int value) {
+    public void setTasksPerVillager(int value) {
         int maxValue = this.getVillagerTasks().size();
         if (value > maxValue) {
             Utils.verboseLog("Attempted to set tasksPerVillager above max value.\n  -> max = " + maxValue
                     + "\n  -> attempted value = " + value);
-            return false;
         }
 
         this.tasksPerVillager = value;
-        return true;
     }
 
     /**
@@ -568,7 +565,7 @@ public class Game {
             }
         }
 
-        player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 10_000_000, 255, false, false, false));
+        //player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 10_000_000, 255, false, false, false));
         this.revivePlayer(player, this.getSpawnLocation());
     }
 
@@ -941,6 +938,10 @@ public class Game {
             } else {
                 setPlayerToVillager(p);
             }
+        }
+
+        if (this.uploadTaskCreated()) {
+            this.setTasksPerVillager(this.getTasksPerVillager() + 1);
         }
 
         GameLoop loop = new GameLoop(this);

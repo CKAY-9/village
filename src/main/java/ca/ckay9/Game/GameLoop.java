@@ -10,6 +10,7 @@ import org.bukkit.inventory.meta.CompassMeta;
 
 import ca.ckay9.Game.Villagers.UploadPart;
 import ca.ckay9.Game.Villagers.VillagerTask;
+import ca.ckay9.Game.Villagers.VillagerTaskType;
 
 /*
     This is responsible for the main game loop of Village. Keeps track of timings and everything related to the gameplay.
@@ -73,12 +74,14 @@ public class GameLoop implements Runnable {
                 }
 
                 UploadPart part = this.game.getUploadParts().get(player.getUniqueId());
-                if (this.game.isFirstPartUpload(task.getBlock().getLocation()) && part != null) {
-                    continue;
-                }
+                if (task.getTaskType() == VillagerTaskType.UPLOAD) {
+                    if (this.game.isFirstPartUpload(task.getBlock().getLocation()) && part != null) {
+                        continue;
+                    }
 
-                if (!this.game.isFirstPartUpload(task.getBlock().getLocation()) && part != UploadPart.COPIED) {
-                    continue;
+                    if (!this.game.isFirstPartUpload(task.getBlock().getLocation()) && part != UploadPart.COPIED) {
+                        continue;
+                    }
                 }
 
                 Location loc = task.getBlock().getLocation();
