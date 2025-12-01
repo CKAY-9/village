@@ -350,6 +350,10 @@ public class Game {
         this.craftTaskExpectedResults.put(uuid, answer);
     }
 
+    public void removeCraftTaskExpectedResult(UUID uuid) {
+        this.craftTaskExpectedResults.remove(uuid);
+    }
+
     public HashMap<UUID, ChatTaskProgress> getChatTaskExpectedResults() {
         return this.chatTaskExpectedResults;
     }
@@ -360,6 +364,10 @@ public class Game {
 
     public void addChatTaskExpectedResult(UUID uuid, ChatTaskProgress progress) {
         this.chatTaskExpectedResults.put(uuid, progress);
+    }
+
+    public void removeChatTaskExpectedResult(UUID uuid) {
+        this.chatTaskExpectedResults.remove(uuid);
     }
 
     public int getMobCount() {
@@ -384,6 +392,22 @@ public class Game {
 
     public void setMaxMeetingButtonUses(int value) {
         this.maxButtonUses = value;
+    }
+
+    public void clearCraftingMaterials(Player player) {
+        for (ItemStack stack : player.getInventory().getContents()) {
+            if (stack == null) {
+                continue;
+            }
+            
+            if (stack.getType() != Material.COMPASS &&
+                    stack.getType() != Material.NETHERITE_SWORD &&
+                    stack.getType() != Material.CLOCK &&
+                    stack.getType() != Material.NETHERITE_HOE &&
+                    stack.getType() != Material.GOLDEN_CARROT) {
+                stack.setAmount(0);
+            }
+        }
     }
 
     /**
@@ -954,6 +978,11 @@ public class Game {
         player.getInventory().addItem(compass);
     }
 
+    /**
+     * Will also give Villagers compasses upon completion
+     * 
+     * @return A value between 0-100
+     */
     public double getCompletedTaskPercent() {
         int numerator = this.getAmountOfCompletedTasks();
         double denominator = Math.max(this.getVillagerCount(), 1) * Math.max(this.getTasksPerVillager(), 1);

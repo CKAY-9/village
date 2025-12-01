@@ -46,18 +46,14 @@ public class GameLoop implements Runnable {
 
             if (item.getType() == Material.COMPASS) {
                 CompassMeta meta = (CompassMeta) item.getItemMeta();
-                double distance = 0;
                 for (Player p : Bukkit.getOnlinePlayers()) {
-                    if (!this.game.isPlayerVillager(p)) {
-                        distance = meta.getLodestone().distance(p.getLocation());
+                    if (!this.game.isPlayerVillager(p) && !this.game.isPlayerDead(player)) {
                         meta.setLodestone(p.getLocation());
                         break;
                     }
                 }
 
-                if (distance < 3) {
-                    item.setItemMeta(meta);
-                }
+                item.setItemMeta(meta);
             }
         }
     }

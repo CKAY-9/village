@@ -118,8 +118,17 @@ public class HUD {
             }
         }
 
-        Score completionText = objective
-                .getScore(Utils.formatText("&8Tasks: &a&l" + this.game.getCompletedTaskPercent() + "%"));
+        StringBuilder taskCompletion = new StringBuilder();
+        taskCompletion.append("&8Task Completion: ");
+        int amount = (int) Math.ceil(this.game.getCompletedTaskPercent() / 10);
+        if (amount == 0) {
+            taskCompletion.append("&a&l□");
+        }
+        for (int i = 0; i < amount; i++) {
+            taskCompletion.append("&a&l■");
+        }
+
+        Score completionText = objective.getScore(Utils.formatText(taskCompletion.toString()));
         completionText.setScore(score--);
 
         player.setScoreboard(board);

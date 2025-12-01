@@ -10,7 +10,6 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.inventory.ItemStack;
 
 import ca.ckay9.Utils;
 import ca.ckay9.Village;
@@ -56,34 +55,29 @@ public class VillagerTaskInteract implements Listener {
             return;
         }
 
+        event.setCancelled(true);
+
         if (!task.assignedToThis(player.getUniqueId())) {
-            event.setCancelled(true);
+            player.sendMessage(Utils.formatText("&c&l[TASK]&r&c You aren't assigned to this task."));
             return;
         }
 
-        // players need to be able to open the crafting table after interacting with it.
         boolean isCrafting = task.getTaskType() == VillagerTaskType.CRAFT
                 || (task.getTaskType() == VillagerTaskType.CUSTOM && block.getType() == Material.CRAFTING_TABLE);
-        boolean hasInteracted = this.game.getCraftTaskExpectedResults().containsKey(player.getUniqueId());
+        boolean interactedWithCraftingTable = this.game.getCraftTaskExpectedResults().containsKey(player.getUniqueId());
+        boolean interactedWithOtherTask = this.game.getChatTaskExpectedResults().containsKey(player.getUniqueId());
+
+        // players need to be able to open the crafting table after interacting with it.
         if (isCrafting) {
-            if (hasInteracted) {
+            if (interactedWithCraftingTable) {
                 event.setCancelled(false);
                 return;
             } else {
-                event.setCancelled(true);
+                task.startTask(player, this.game);
             }
-        } else {
-            event.setCancelled(true);
+        } else if (!interactedWithOtherTask) {
+            task.startTask(player, this.game);
         }
-
-        ChatTaskProgress progress = this.game.getChatTaskExpectedResults().get(player.getUniqueId());
-        boolean previousInteractionWasWithThisTask = progress != null
-                && task.getBlock().getLocation().equals(progress.getTask().getBlock().getLocation());
-        if (previousInteractionWasWithThisTask) {
-            return;
-        }
-
-        task.startTask(player, this.game);
     }
 
     /**
@@ -113,33 +107,16 @@ public class VillagerTaskInteract implements Listener {
                         + "\n  -> Received = " + receivedMaterial.name());
 
         if (receivedMaterial.equals(progress.getMaterial())) {
-            this.game.getCraftTaskExpectedResults().remove(player.getUniqueId());
-            progress.getTask().completeTask(player);
+            progress.getTask().completeTask(player, this.game);
         } else {
-            progress.getTask().failTask(player);
+            progress.getTask().failTask(player, this.game);
         }
 
+        this.game.getCraftTaskExpectedResults().remove(player.getUniqueId());
         player.closeInventory();
+        game.clearCraftingMaterials(player);
+        this.game.clearCraftingMaterials(player);
         event.setCancelled(true);
-
-        for (ItemStack stack : player.getInventory().getContents()) {
-            if (stack == null) {
-                continue;
-            }
-
-            /**
-             * compasses are given after task completion
-             * wooden swords and clocks are used by detectives
-             * golden carrots are used by medics
-             */
-            if (stack.getType() != Material.COMPASS &&
-                    stack.getType() != Material.NETHERITE_SWORD &&
-                    stack.getType() != Material.CLOCK &&
-                    stack.getType() != Material.NETHERITE_HOE &&
-                    stack.getType() != Material.GOLDEN_CARROT) {
-                stack.setAmount(0);
-            }
-        }
     }
 
     /**
@@ -175,9 +152,10 @@ public class VillagerTaskInteract implements Listener {
                 + "\n  -> Received = " + message);
 
         if (message.equals(taskProgress.getAnswer())) {
-            taskProgress.getTask().completeTask(player);
+            game.removeChatTaskExpectedResult(player.getUniqueId());
+            taskProgress.getTask().completeTask(player, this.game);
         } else {
-            taskProgress.getTask().failTask(player);
+            taskProgress.getTask().failTask(player, this.game);
         }
 
         event.setMessage("");

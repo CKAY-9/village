@@ -169,7 +169,7 @@ public class VillagerTask {
      * 
      * @param player The player who completed the Task
      */
-    public void completeTask(Player player) {
+    public void completeTask(Player player, Game game) {
         Utils.verbosePlayerLog(player, "Completed task.");
         this.assignedVillagers.put(player.getUniqueId(), true);
         player.sendMessage(Utils.formatText("&a&l[TASK]&r&a Completed task!"));
@@ -180,7 +180,7 @@ public class VillagerTask {
      * 
      * @param player The player who failed the task
      */
-    public void failTask(Player player) {
+    public void failTask(Player player, Game game) {
         Utils.verbosePlayerLog(player, "Failed task.");
         this.assignedVillagers.put(player.getUniqueId(), false);
         player.sendMessage(Utils.formatText("&c&l[TASK]&r&c Failed task! Retry by interacting with it."));
@@ -240,7 +240,7 @@ public class VillagerTask {
      */
     public void setTaskType(VillagerTaskType taskType) {
         this.taskType = taskType;
-        
+
         if (taskType == VillagerTaskType.CRAFT) {
             this.getBlock().setType(Material.CRAFTING_TABLE);
         } else if (taskType == VillagerTaskType.MATH) {
