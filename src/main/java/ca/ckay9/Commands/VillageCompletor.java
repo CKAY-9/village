@@ -29,12 +29,15 @@ public class VillageCompletor implements TabCompleter {
         switch (args.length) {
             case 1:
                 if (!this.game.isGameInProgress()) {
-                    options.add("vent");
-                    options.add("task");
                     options.add("meeting");
                     options.add("spawn");
                     options.add("start");
-                    options.add("no-edit");
+                    if (sender instanceof Player) {
+                        options.add("no-edit");
+                        options.add("vent");
+                        options.add("task");
+                    }
+
                     options.add("save");
                     options.add("load");
                     options.add("tasks-needed");
@@ -51,35 +54,6 @@ public class VillageCompletor implements TabCompleter {
                     options.add("force-villager");
                     options.add("force-mob");
                 }
-                break;
-            case 2:
-                String subcommand = args[0].strip().toLowerCase();
-                switch (subcommand) {
-                    case "ability-cooldown":
-                    case "max-button":
-                    case "button-time":
-                    case "kill-cooldown":
-                    case "tasks-needed":
-                    case "voting-time":
-                    case "discussion-time":
-                    case "mob-count":
-                        options.add("0");
-                        break;
-                    case "save":
-                    case "load":
-                        options.add("id");
-                        break;
-                    case "force-villager":
-                    case "force-mob":
-                        for (Player p : Bukkit.getOnlinePlayers()) {
-                            options.add(p.getName());
-                        }
-                        break;
-
-                    default:
-                        break;
-                }
-
                 break;
             default:
                 break;

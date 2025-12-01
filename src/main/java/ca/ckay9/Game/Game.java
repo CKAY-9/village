@@ -18,6 +18,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
@@ -399,7 +400,7 @@ public class Game {
             if (stack == null) {
                 continue;
             }
-            
+
             if (stack.getType() != Material.COMPASS &&
                     stack.getType() != Material.NETHERITE_SWORD &&
                     stack.getType() != Material.CLOCK &&
@@ -503,10 +504,12 @@ public class Game {
         player.setHealth(20);
         player.setSaturation(20);
 
-        Collections.shuffle(this.getVillagerTasks());
-        List<VillagerTask> selectedTasks = this.getVillagerTasks().subList(0, this.getTasksPerVillager());
-        for (VillagerTask task : selectedTasks) {
-            task.addAssignedVillager(player.getUniqueId());
+        if (this.getVillagerTasks().size() > 0) {
+            Collections.shuffle(this.getVillagerTasks());
+            List<VillagerTask> selectedTasks = this.getVillagerTasks().subList(0, this.getTasksPerVillager());
+            for (VillagerTask task : selectedTasks) {
+                task.addAssignedVillager(player.getUniqueId());
+            }
         }
 
         player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 10_000_000, 255, false, false, false));
@@ -663,7 +666,7 @@ public class Game {
         this.village.getServer().getScheduler().scheduleSyncDelayedTask(village, new Runnable() {
             @Override
             public void run() {
-                end();
+                end(null);
             }
         }, 100L);
     }
@@ -832,22 +835,36 @@ public class Game {
      * Attempts to start a game of Village.
      * Can fail if locations aren't setup, no players, etc.
      */
-    public void start() {
+    public void start(@Nullable CommandSender caller) {
+        if (caller != null) {
+            caller.sendMessage(Utils.formatText("&e&l[VILLAGE]&r&e Starting Village game."));
+        }
+
         // players check
         int onlinePlayerCount = Bukkit.getOnlinePlayers().size();
         if (onlinePlayerCount <= 0) {
             Utils.verboseLog("Failed to start Village game. No online players.");
+            if (caller != null) {
+                caller.sendMessage(Utils.formatText("&c&l[VILLAGE]&r&c Failed: No online players."));
+            }
             return;
         }
 
         // location checks
         if (this.getSpawnLocation() == null || this.getMeetingLocation() == null) {
             Utils.verboseLog("Failed to start Village game. Spawn or meeting location are not setup.");
+            if (caller != null) {
+                caller.sendMessage(
+                        Utils.formatText("&c&l[VILLAGE]&r&c Failed: Meeting and or spawn locations aren't setup."));
+            }
             return;
         }
 
         if (this.isGameInProgress()) {
             Utils.verboseLog("Failed to start Village game. Game already in progress.");
+            if (caller != null) {
+                caller.sendMessage(Utils.formatText("&c&l[VILLAGE]&r&c Failed: On-going game."));
+            }
             return;
         }
 
@@ -877,6 +894,9 @@ public class Game {
 
         this.setGameStatus(Status.PLAYING);
         Utils.verboseLog("Started Village game. Playing.");
+        if (caller != null) {
+            caller.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Started Village game."));
+        }
     }
 
     /**
@@ -885,9 +905,16 @@ public class Game {
      * data and players. Doesn't handle win conditions. Status will be set to
      * NO_GAME at the end.
      */
-    public void end() {
+    public void end(@Nullable CommandSender caller) {
+        if (caller != null) {
+            caller.sendMessage(Utils.formatText("&e&l[VILLAGE]&r&e Ending Village game."));
+        }
+
         if (!this.isGameInProgress()) {
             Utils.verboseLog("Failed to end Village game. No game in progress.");
+            if (caller != null) {
+                caller.sendMessage(Utils.formatText("&c&l[VILLAGE]&r&c Failed: No game on-going."));
+            }
             return;
         }
 
@@ -953,6 +980,9 @@ public class Game {
 
         this.setGameStatus(Status.NO_GAME);
         Utils.verboseLog("Ended Village game. Finished.");
+        if (caller != null) {
+            caller.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Ended Village game."));
+        }
     }
 
     public void setPlayerRole(UUID uuid, Role role) {

@@ -19,8 +19,18 @@ public class Utils {
             return;
         }
 
-        Utils.getPlugin().getLogger()
-                .info("Player Log: " + player.getName() + " (" + player.getUniqueId().toString() + ") -> " + message);
+        String log = "Player Log: " + player.getName() + " (" + player.getUniqueId().toString() + ") -> " + message;
+        if (Village.verboseLoggingInGame()) {
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                if (!p.isOp()) {
+                    continue;
+                }
+
+                p.sendMessage(Utils.formatText("&9&l[VILLAGE]&r ") + log);
+            }
+        }
+
+        Utils.getPlugin().getLogger().info(log);
     }
 
     public static void verboseLog(String message) {
@@ -28,7 +38,18 @@ public class Utils {
             return;
         }
 
-        Utils.getPlugin().getLogger().info("Log -> " + message);
+        String log = "Log -> " + message;
+        if (Village.verboseLoggingInGame()) {
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                if (!p.isOp()) {
+                    continue;
+                }
+
+                p.sendMessage(Utils.formatText("&9&l[VILLAGE]&r ") + log);
+            }
+        }
+
+        Utils.getPlugin().getLogger().info(log);
     }
 
     public static long ticksToSeconds(long ticks) {

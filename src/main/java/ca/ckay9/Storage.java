@@ -43,6 +43,12 @@ public class Storage {
                         Collections.singletonList("Logs a lot. Recommend having disabled but can be useful."));
             }
 
+            if (!config.isSet("debug.verboseLoggingInGame")) {
+                config.set("debug.verboseLoggingInGame", false);
+                config.setInlineComments("debug.verboseLoggingInGame",
+                        Collections.singletonList("If verboseLogging is false, this will not work. Logs to in-game chat for operators."));
+            }
+
             if (!config.isSet("tasks.doThemAll")) {
                 config.set("tasks.doThemAll", true);
                 config.setInlineComments("tasks.doThemAll", Collections

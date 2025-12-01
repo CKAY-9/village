@@ -35,6 +35,10 @@ public class Village extends JavaPlugin {
         return Storage.config.getBoolean("debug.verboseLogging", false);
     }
 
+    public static boolean verboseLoggingInGame() {
+        return Storage.config.getBoolean("debug.verboseLoggingInGame", false);
+    }
+
     @Override
     public void onEnable() {
         Storage.initializeConfig();
@@ -54,7 +58,7 @@ public class Village extends JavaPlugin {
     @Override
     public void onDisable() {
         if (this.game.isGameInProgress()) {
-            this.game.end();
+            this.game.end(null);
         }
 
         if (this.game.getMeetingButton() != null) {
