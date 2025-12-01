@@ -48,6 +48,7 @@ public class VillageCompletor implements TabCompleter {
                     options.add("task-win");
                     options.add("ability-cooldown");
                     options.add("mob-count");
+                    options.add("blind");
                 } else {
                     options.add("end");
                     options.add("force-villager");

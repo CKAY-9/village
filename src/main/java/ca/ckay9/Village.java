@@ -1,5 +1,11 @@
 package ca.ckay9;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -39,6 +45,34 @@ public class Village extends JavaPlugin {
         return Storage.config.getBoolean("debug.verboseLoggingInGame", false);
     }
 
+    private void checkVersion() {
+        String lv = "0.0.0";
+        try {
+            URL url = new URL("https://api.spigotmc.org/legacy/update.php?resource=130487");
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setConnectTimeout(5000);
+            connection.setReadTimeout(5000);
+
+            BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            lv = in.readLine();
+            in.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        String currentVersion = getDescription().getVersion();
+        if (lv != null && !currentVersion.equals(lv)) {
+            getLogger().warning("\n\nThis version of Village is out of date. The most recent version is " + lv
+                    + " (installed: " + currentVersion
+                    + ").\nDo I need to update? No, but it probably has more features and bug patches.\n"
+                    + "If you want to update, go here\n - https://github.com/CKAY-9/village\n - https://www.spigotmc.org/resources/village.130487/\n");
+        } else {
+            getLogger().info("Passed version check. Village is running on the latest version.");
+        }
+    }
+
     @Override
     public void onEnable() {
         Storage.initializeConfig();
@@ -53,6 +87,8 @@ public class Village extends JavaPlugin {
 
         PluginManager manager = this.getServer().getPluginManager();
         manager.registerEvents(new PlayerLeave(this.game, this.editor), this);
+
+        checkVersion();
     }
 
     @Override

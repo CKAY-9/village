@@ -32,6 +32,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 import ca.ckay9.Storage;
 import ca.ckay9.Utils;
@@ -87,6 +88,7 @@ public class Game {
     private int maxButtonUses; // how many times can each player use the button
     private boolean allowTaskWin; // if set to true, villagers can win if they finish all their tasks
     private HashMap<UUID, UploadPart> uploadParts;
+    private int blindAmount;
 
     public Game(Village village) {
         this.village = village;
@@ -103,15 +105,16 @@ public class Game {
         this.tasksPerVillager = 1;
         this.gameLoop = null;
         this.gameLoopID = -1;
+        this.blindAmount = 1;
         this.completedAllTasks = false;
         this.killCooldowns = new HashMap<>();
         this.abilityCooldowns = new HashMap<>();
-        this.killCooldown = Utils.secondsToTicks(15);
-        this.abilityCooldown = Utils.secondsToTicks(15);
-        this.votingTime = Utils.secondsToTicks(10);
-        this.discussionTime = Utils.secondsToTicks(10);
+        this.killCooldown = Utils.secondsToTicks(25);
+        this.abilityCooldown = Utils.secondsToTicks(30);
+        this.votingTime = Utils.secondsToTicks(45);
+        this.discussionTime = Utils.secondsToTicks(30);
         this.votes = new HashMap<>();
-        this.meetingButtonCooldown = Utils.secondsToTicks(10);
+        this.meetingButtonCooldown = Utils.secondsToTicks(15);
         this.maxButtonUses = 1;
         this.buttonUses = new HashMap<>();
         this.allowTaskWin = false;
@@ -134,6 +137,18 @@ public class Game {
 
         village.getCommand("vote").setExecutor(new VoteCommand(this));
         village.getCommand("vote").setTabCompleter(new VoteCompletor());
+    }
+
+    public void setBlindAmount(int amount) {
+        this.blindAmount = amount;
+    }
+
+    public int getBlindAmount() {
+        return this.blindAmount;
+    }
+
+    public boolean shouldBlind() {
+        return this.blindAmount >= 1;
     }
 
     public HashMap<UUID, UploadPart> getUploadParts() {
@@ -488,6 +503,48 @@ public class Game {
         return total;
     }
 
+    public int getAmountOfTasksForPlayers(UUID playerUUID) {
+        int count = 0;
+        for (VillagerTask task : this.getVillagerTasks()) {
+            if (!task.assignedToThis(playerUUID)) {
+                continue;
+            }
+
+            count++;
+        }
+
+        return count;
+    }
+
+    public int getAmountOfCompletedTasksByPlayer(UUID playerUUID) {
+        boolean countedUpload = !this.uploadTaskCreated();
+        int count = 0;
+        for (VillagerTask task : this.getVillagerTasks()) {
+            if (!task.assignedToThis(playerUUID)) {
+                continue;
+            }
+
+            if (task.getTaskType() == VillagerTaskType.UPLOAD && countedUpload) {
+                continue;
+            }
+
+            UploadPart part = this.getUploadParts().get(playerUUID);
+            if (task.getTaskType() == VillagerTaskType.UPLOAD && !countedUpload) {
+                if (part != null && part != UploadPart.COPYING) {
+                    count++;
+                    countedUpload = true;
+                    continue;
+                }
+            }
+
+            if (task.hasCompleted(playerUUID)) {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
     /**
      * Forces a player to the villagers. Sets up inventory, tasks, and everything
      * else needed.
@@ -550,21 +607,24 @@ public class Game {
         }
 
         if (this.getVillagerTasks().size() > 0) {
-            Collections.shuffle(this.getVillagerTasks());
-            List<VillagerTask> selectedTasks = this.getVillagerTasks().subList(0,
-                    this.getTasksPerVillager() - (this.uploadTaskCreated() ? 1 : 0));
+            List<VillagerTask> copy = new ArrayList<>(this.getVillagerTasks());
+            copy.removeIf(task -> task.getTaskType() == VillagerTaskType.UPLOAD);
+            Collections.shuffle(copy);
+
+            int taskLimit = this.getTasksPerVillager()
+                    - (this.uploadTaskCreated() ? Math.min(this.getTasksPerVillager(), 2) : 0);
+            taskLimit = Math.max(0, Math.min(taskLimit, copy.size()));
+            List<VillagerTask> selectedTasks = copy.subList(0, taskLimit);
 
             for (VillagerTask task : selectedTasks) {
-                if (task.getTaskType() == VillagerTaskType.UPLOAD) {
-                    continue;
-                }
-
                 task.addAssignedVillager(player.getUniqueId());
             }
         }
 
-        // player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS,
-        // 10_000_000, 255, false, false, false));
+        if (this.shouldBlind()) {
+            player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS,
+                    10_000_000, this.getBlindAmount(), false, false, false));
+        }
         this.revivePlayer(player, this.getSpawnLocation());
     }
 
@@ -1493,6 +1553,7 @@ public class Game {
             Storage.worldsData.set(root + "maxButtons", this.getMaxMeetingButtonUses());
             Storage.worldsData.set(root + "taskWin", this.canWinOnTasks());
             Storage.worldsData.set(root + "abilityCooldown", this.getAbilityCooldown());
+            Storage.worldsData.set(root + "blind", this.getBlindAmount());
             Utils.verboseLog("Saved gameplay values!");
 
             int i = 0;
@@ -1569,22 +1630,26 @@ public class Game {
             return false;
         }
 
-        for (VillagerTask task : this.getVillagerTasks()) {
-            if (task == null) {
-                continue;
-            }
+        if (this.getVillagerTasks() != null && this.getVillagerTasks().size() >= 1) {
+            for (VillagerTask task : this.getVillagerTasks()) {
+                if (task == null) {
+                    continue;
+                }
 
-            task.destroy();
-            removeVillagerTask(task);
+                task.destroy();
+                removeVillagerTask(task);
+            }
         }
 
-        for (Vent vent : this.getMobVents()) {
-            if (vent == null) {
-                continue;
-            }
+        if (this.getVillagerTasks() != null && this.getMobVents().size() >= 1) {
+            for (Vent vent : this.getMobVents()) {
+                if (vent == null) {
+                    continue;
+                }
 
-            vent.destroy();
-            removeMobVent(vent);
+                vent.destroy();
+                removeMobVent(vent);
+            }
         }
 
         Utils.verboseLog("Loading gameplay values...");
@@ -1596,6 +1661,7 @@ public class Game {
         this.setMaxMeetingButtonUses(section.getInt("maxButtons", this.getMaxMeetingButtonUses()));
         this.setAllowTaskWin(section.getBoolean("taskWin", this.canWinOnTasks()));
         this.setAbilityCooldown(section.getLong("abilityCooldown", 500));
+        this.setBlindAmount(section.getInt("blind", 1));
         Utils.verboseLog("Loaded gameplay values!");
 
         this.setSpawnLocation(new Location(

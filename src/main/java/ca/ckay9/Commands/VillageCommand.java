@@ -272,6 +272,18 @@ public class VillageCommand implements CommandExecutor {
         sender.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Updated ability cooldown."));
     }
 
+    private void handleBlind(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage(
+                    Utils.formatText("&c&l[VILLAGE]&r&c Usage: /village " + args[0].strip() + " number"));
+            return;
+        }
+
+        int blindAmount = Integer.valueOf(args[1].strip());
+        this.village.getGame().setBlindAmount(blindAmount);
+        sender.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Updated blind amount."));
+    }
+
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!sender.isOp()) {
@@ -319,6 +331,8 @@ public class VillageCommand implements CommandExecutor {
                     "&a - ability-cooldown ticks: Set the abilitiy cooldown in ticks"));
             sender.sendMessage(Utils.formatText(
                     "&a - mob-count number: Set the amount of mobs"));
+            sender.sendMessage(Utils.formatText(
+                    "&a - blind number: Set how blind Villagers are. Zero will give no blindness."));
             return false;
         }
 
@@ -390,6 +404,8 @@ public class VillageCommand implements CommandExecutor {
             case "ability-cooldown":
                 handleAbilityCooldown(sender, args);
                 break;
+            case "blind":
+                handleBlind(sender, args);
             default:
                 break;
         }

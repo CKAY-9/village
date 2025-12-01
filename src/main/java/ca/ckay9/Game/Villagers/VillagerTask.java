@@ -288,7 +288,11 @@ public class VillagerTask {
                     player.sendTitle(Utils.formatText("&6&lUPLOADED"), Utils.formatText("Uploaded files to network."),
                             10, 40, 10);
                     game.addUploadPart(playerUUID, UploadPart.UPLOADED);
-                    completeTask(player, game);
+                    for (VillagerTask task : game.getVillagerTasks()) {
+                        if (task.getTaskType() == VillagerTaskType.UPLOAD && !task.hasCompleted(playerUUID)) {
+                            task.completeTask(player, game);
+                        }
+                    }
                 }
             }
         }, 200L);
@@ -352,6 +356,7 @@ public class VillagerTask {
      * @param player The player who completed the Task
      */
     public void completeTask(Player player, Game game) {
+        // set both to completed. two part task
         player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 5, 1);
         Utils.verbosePlayerLog(player, "Completed task.");
         this.assignedVillagers.put(player.getUniqueId(), true);

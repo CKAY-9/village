@@ -118,6 +118,13 @@ public class HUD {
             }
         }
 
+        if (this.game.isPlayerVillager(player)) {
+            String personalCompletion = this.game.getAmountOfCompletedTasksByPlayer(player.getUniqueId()) + "/"
+                    + this.game.getAmountOfTasksForPlayers(player.getUniqueId());
+            Score personalText = objective.getScore(Utils.formatText("&8Your Tasks: &a&l" + personalCompletion));
+            personalText.setScore(score--);
+        }
+
         StringBuilder taskCompletion = new StringBuilder();
         taskCompletion.append("&8Task Completion: ");
         int amount = (int) Math.ceil(this.game.getCompletedTaskPercent() / 10);
