@@ -69,7 +69,7 @@ public class VillageCommand implements CommandExecutor {
             double y = Double.valueOf(args[3].strip());
             double z = Double.valueOf(args[4].strip());
 
-            this.village.getGame().setMeetingLocation(new Location(world, x, y, z));
+            this.village.getGame().setSpawnLocation(new Location(world, x, y, z));
         }
 
         sender.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Updated spawn location."));
