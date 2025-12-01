@@ -73,6 +73,10 @@ A craft task requires the Villager to craft a specified item. They are given the
 
 Example: `Craft: DIAMOND HOE` The Villager will craft a diamond hoe in any crafting table.
 
+#### Upload Task
+
+Similar to Among Us' upload task, each map can have an upload task that every Villager has. It is a two part task where players must copy and upload for 20s total in two different locations.
+
 #### Custom Task
 
 A custom task is something server operators can add to Village. They are just custom versions
