@@ -1,11 +1,13 @@
 package ca.ckay9;
 
+import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import ca.ckay9.Commands.VillageCommand;
 import ca.ckay9.Commands.VillageCompletor;
 import ca.ckay9.Editor.Editor;
 import ca.ckay9.Game.Game;
+import ca.ckay9.Game.Listeners.PlayerLeave;
 
 public class Village extends JavaPlugin {
     private Game game;
@@ -25,7 +27,6 @@ public class Village extends JavaPlugin {
         return this.editor;
     }
 
-    
     public static boolean inDeveloperDebug() {
         return Storage.config.getBoolean("debug.developer", false);
     }
@@ -45,6 +46,9 @@ public class Village extends JavaPlugin {
 
         this.getCommand("village").setExecutor(new VillageCommand(this));
         this.getCommand("village").setTabCompleter(new VillageCompletor(this.getGame()));
+
+        PluginManager manager = this.getServer().getPluginManager();
+        manager.registerEvents(new PlayerLeave(this.game, this.editor), this);
     }
 
     @Override

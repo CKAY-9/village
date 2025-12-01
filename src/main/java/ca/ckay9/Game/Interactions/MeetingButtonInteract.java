@@ -61,7 +61,7 @@ public class MeetingButtonInteract implements Listener {
 
         // check usage
         Integer uses = this.game.getMeetingUses().get(player.getUniqueId());
-        if (uses != null && uses > this.game.getMaxMeetingButtonUses()) {
+        if (uses != null && uses >= this.game.getMaxMeetingButtonUses()) {
             return;
         }
 

@@ -4,9 +4,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import javax.annotation.Nullable;
 
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -20,9 +23,11 @@ import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.CompassMeta;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -41,7 +46,6 @@ import ca.ckay9.Game.Interactions.VoteInteract;
 import ca.ckay9.Game.Listeners.PlayerDamage;
 import ca.ckay9.Game.Listeners.PlayerDropItem;
 import ca.ckay9.Game.Listeners.PlayerJoin;
-import ca.ckay9.Game.Listeners.PlayerLeave;
 import ca.ckay9.Game.Listeners.PlayerMove;
 import ca.ckay9.Game.Mobs.Vent;
 import ca.ckay9.Game.Villagers.ChatTaskProgress;
@@ -61,14 +65,14 @@ public class Game {
     private ArrayList<Vent> mobVents; // all created mob vents
     private Village village; // parent class
     private int tasksPerVillager; // how many tasks each villager has
-    private int villagerCount; // how many villagers there are, this is also used to calculate mobCount (see
-                               // getMobCount() and setMobCount())
+    private int mobCount; // the amount of mobs
     private GameLoop gameLoop; // the game loop instance
     private int gameLoopID; // ID to bukkit runnable
     private boolean completedAllTasks; // used to check for villager completion
     private HashMap<UUID, Long> killCooldowns; // keeps track of kill cooldowns for each mob
     private HashMap<UUID, Long> abilityCooldowns; // keeps track of all ability cooldowns
     private HashMap<UUID, Long> timeOfDeaths; // time of death for each player
+    private HashSet<UUID> deadPlayers;
     private long killCooldown; // how long do mobs have to wait inbetween kills in ticks
     private long abilityCooldown; // how long do special roles have to wait before using their ability
     private long votingTime; // how long does the voting time last in ticks
@@ -91,7 +95,7 @@ public class Game {
         this.meetingButton = null;
         this.chatTaskExpectedResults = new HashMap<>();
         this.craftTaskExpectedResults = new HashMap<>();
-        this.villagerCount = 1;
+        this.mobCount = 1;
         this.tasksPerVillager = 1;
         this.gameLoop = null;
         this.gameLoopID = -1;
@@ -108,6 +112,7 @@ public class Game {
         this.buttonUses = new HashMap<>();
         this.allowTaskWin = false;
         this.timeOfDeaths = new HashMap<>();
+        this.deadPlayers = new HashSet<>();
 
         PluginManager manager = village.getServer().getPluginManager();
         manager.registerEvents(new VentInteract(this), village);
@@ -118,12 +123,36 @@ public class Game {
         manager.registerEvents(new VoteInteract(this), village);
         manager.registerEvents(new MeetingButtonInteract(this), village);
         manager.registerEvents(new PlayerDropItem(this), village);
-        manager.registerEvents(new PlayerLeave(this, village.getEditor()), village);
         manager.registerEvents(new PlayerJoin(this), village);
         manager.registerEvents(new MagicWandInteract(this), village);
 
         village.getCommand("vote").setExecutor(new VoteCommand(this));
         village.getCommand("vote").setTabCompleter(new VoteCompletor());
+    }
+
+    public void setDeadPlayers(HashSet<UUID> hashSet) {
+        this.deadPlayers = hashSet;
+    }
+
+    public void addDeadPlayer(UUID uuid) {
+        this.deadPlayers.add(uuid);
+    }
+
+    public void removeDeadPlayer(UUID uuid) {
+        this.deadPlayers.remove(uuid);
+    }
+
+    public HashSet<UUID> getDeadPlayers() {
+        return this.deadPlayers;
+    }
+
+    /**
+     * 
+     * @param player Who to check if they're dead
+     * @return True if they are dead, false otherwise
+     */
+    public boolean isPlayerDead(Player player) {
+        return this.deadPlayers.contains(player.getUniqueId());
     }
 
     /**
@@ -332,17 +361,17 @@ public class Game {
     public void addChatTaskExpectedResult(UUID uuid, ChatTaskProgress progress) {
         this.chatTaskExpectedResults.put(uuid, progress);
     }
+    
+    public int getMobCount() {
+        return this.mobCount;
+    }
+
+    public void setMobCount(int value) {
+        this.mobCount = value;
+    }
 
     public int getVillagerCount() {
-        return this.villagerCount;
-    }
-
-    public void setVillagerCount(int value) {
-        this.villagerCount = value;
-    }
-
-    public int getMobCount() {
-        return Bukkit.getOnlinePlayers().size() - this.getVillagerCount();
+        return Bukkit.getOnlinePlayers().size() - this.getMobCount();
     }
 
     public boolean hasCompletedAllTasks() {
@@ -355,24 +384,6 @@ public class Game {
 
     public void setMaxMeetingButtonUses(int value) {
         this.maxButtonUses = value;
-    }
-
-    /**
-     * This works by changing villager count to players - value
-     * 
-     * @param value How many mobs should there be
-     */
-    public void setMobCount(int value) {
-        this.villagerCount = Bukkit.getOnlinePlayers().size() - value;
-    }
-
-    /**
-     * 
-     * @param player Who to check if they're dead
-     * @return True if they are in spectator, false otherwise
-     */
-    public boolean isPlayerDead(Player player) {
-        return player.getGameMode() == GameMode.SPECTATOR;
     }
 
     /**
@@ -475,8 +486,7 @@ public class Game {
         }
 
         player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 10_000_000, 255, false, false, false));
-        player.setGameMode(GameMode.ADVENTURE);
-        player.teleport(this.getSpawnLocation());
+        this.revivePlayer(player, this.getSpawnLocation());
     }
 
     /**
@@ -538,6 +548,8 @@ public class Game {
         player.getInventory().addItem(knife);
         player.setGameMode(GameMode.ADVENTURE);
         player.teleport(this.getSpawnLocation());
+    
+        this.revivePlayer(player, this.getSpawnLocation());
     }
 
     /**
@@ -575,7 +587,7 @@ public class Game {
      * @param player
      */
     public void evictPlayer(Player player) {
-        player.setGameMode(GameMode.SPECTATOR);
+        this.killPlayer(player, true, false, null);
         player.sendTitle(Utils.formatText("&c&lVOTED OUT"),
                 Utils.formatText("You have been evicted by the &a&lVillagers"), 20, 80, 20);
     }
@@ -815,10 +827,6 @@ public class Game {
             return;
         }
 
-        this.setVillagerCount(onlinePlayerCount);
-        int mobCount = Math.max(1, Math.floorDiv(onlinePlayerCount, 4));
-        this.setMobCount(mobCount); // will change villager count
-
         if (Storage.config.getBoolean("tasks.doThemAll", true)) {
             this.setTasksPerVillager(this.getVillagerTasks().size());
         }
@@ -909,6 +917,8 @@ public class Game {
         this.playerRoles.clear();
         this.killCooldowns.clear();
         this.abilityCooldowns.clear();
+        this.deadPlayers.clear();
+        this.buttonUses.clear();
         this.votes.clear();
         this.completedAllTasks = false;
 
@@ -1241,6 +1251,82 @@ public class Game {
     }
 
     /**
+     * @param toRevive Which player should be revived.
+     * @param location The location the player should be teleported to. If null is
+     *                 provided, it will just revive where they are.
+     */
+    public void revivePlayer(Player toRevive, @Nullable Location location) {
+        toRevive.setGameMode(GameMode.ADVENTURE);
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            p.showPlayer(village, toRevive);
+        }
+
+        if (location != null) {
+            toRevive.teleport(location);
+        }
+
+        this.removeDeadPlayer(toRevive.getUniqueId());
+    }
+
+    /**
+     * 
+     * @param toKill     Which player should die.
+     * @param silent     Should the player be sent a title
+     * @param createBody Should a body be spawned
+     * @param killer     Who killed this player. If null is provided, it will just
+     *                   force
+     *                   them to spectate
+     */
+    public void killPlayer(Player toKill, boolean silent, boolean createBody, @Nullable Player killer) {
+        toKill.setGameMode(GameMode.ADVENTURE);
+        this.addDeadPlayer(toKill.getUniqueId());
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            if (this.isPlayerDead(p)) {
+                p.showPlayer(village, toKill);
+                continue;
+            }
+
+            p.hidePlayer(village, toKill);
+        }
+
+        if (createBody) {
+            Location damagedLocation = toKill.getLocation().add(0, 1, 0);
+            ArmorStand armorStand = (ArmorStand) toKill.getWorld().spawnEntity(damagedLocation,
+                    EntityType.ARMOR_STAND);
+            armorStand.setInvulnerable(true);
+            armorStand.setCustomName(Utils.formatText("&c&lBODY&r | &c&l" + toKill.getName()));
+            armorStand.setCustomNameVisible(true);
+
+            EntityEquipment equipment = armorStand.getEquipment();
+            ItemStack head = new ItemStack(Material.PLAYER_HEAD, 1);
+            SkullMeta headMeta = (SkullMeta) head.getItemMeta();
+            headMeta.setOwnerProfile(toKill.getPlayerProfile());
+            head.setItemMeta(headMeta);
+
+            equipment.setHelmet(head);
+            equipment.setChestplate(new ItemStack(Material.LEATHER_CHESTPLATE));
+            equipment.setLeggings(new ItemStack(Material.LEATHER_LEGGINGS));
+            equipment.setBoots(new ItemStack(Material.LEATHER_BOOTS));
+        }
+
+        if (killer != null && !silent) {
+            Role killerRole = this.getPlayerRole(killer.getUniqueId());
+            if (killerRole == Role.DETECTIVE) {
+                toKill.sendTitle(Utils.formatText("&c&lKILLED"),
+                        Utils.formatText("Detective &a&l" + killer.getName() + "&r has killed you"), 20, 80, 20);
+            } else {
+                toKill.sendTitle(Utils.formatText("&c&lKILLED"),
+                        Utils.formatText("You have been killed by &c&l" + killer.getName()), 20, 80, 20);
+            }
+
+            this.addKillCooldown(killer.getUniqueId(), this.getKillCooldown());
+            this.addTimeOfDeath(toKill.getUniqueId(), this.getGameLoop().getTicksSinceStart());
+            this.addDeadPlayer(toKill.getUniqueId());
+            this.checkWinCondition();
+        }
+    }
+
+    /**
      * Will attempt to save the current game object to the current world's config
      * section
      * 
@@ -1327,7 +1413,7 @@ public class Game {
      * Attempts to load a saved config by its ID
      * 
      * @param world The world to load the config in
-     * @param id The id of the config
+     * @param id    The id of the config
      * @return True if successful, false if otherwise
      */
     public boolean loadFromSaveID(World world, String id) {

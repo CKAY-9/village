@@ -67,48 +67,55 @@ public class HUD {
             devBorder.setScore(score--);
         }
 
+        if (this.game.isPlayerDead(player)) {
+            Score spectatingText = objective.getScore(Utils.formatText("&c&lSPECTATING"));
+            spectatingText.setScore(score--);
+        }
+
         Role role = this.game.getPlayerRole(player.getUniqueId());
-        Score roleText = objective.getScore(Utils.formatText("&8Role: &a&l" + role.toString()));
-        if (!this.game.isPlayerVillager(player)) {
-            roleText = objective.getScore(Utils.formatText("&8Role: &c&l" + role.toString()));
-        }
-
-        roleText.setScore(score--);
-
-        if (role == Role.DETECTIVE || role == Role.DARK_WIZARD || role == Role.MEDIC || role == Role.SWEEPER) {
-            Long cooldown = this.game.getAbilityCooldowns().get(player.getUniqueId());
-            if (cooldown == null) {
-                cooldown = this.game.getAbilityCooldown();
-                this.game.addAbilityCooldown(player.getUniqueId(), cooldown);
+        if (role != null) {
+            Score roleText = objective.getScore(Utils.formatText("&8Role: &a&l" + role.toString()));
+            if (!this.game.isPlayerVillager(player)) {
+                roleText = objective.getScore(Utils.formatText("&8Role: &c&l" + role.toString()));
             }
 
-            long inSeconds = Math.max(0, Math.round(cooldown / 20));
-            Score cooldownText = objective
-                    .getScore(Utils.formatText("&8Ability Cooldown: &e&l" + inSeconds + "s"));
-            if (inSeconds <= 0) {
-                cooldownText = objective
-                        .getScore(Utils.formatText("&e&lABILITY READY!"));
+            roleText.setScore(score--);
+
+            if (role == Role.DETECTIVE || role == Role.DARK_WIZARD || role == Role.MEDIC || role == Role.SWEEPER) {
+                Long cooldown = this.game.getAbilityCooldowns().get(player.getUniqueId());
+                if (cooldown == null) {
+                    cooldown = this.game.getAbilityCooldown();
+                    this.game.addAbilityCooldown(player.getUniqueId(), cooldown);
+                }
+
+                long inSeconds = Math.max(0, Math.round(cooldown / 20));
+                Score cooldownText = objective
+                        .getScore(Utils.formatText("&8Ability Cooldown: &e&l" + inSeconds + "s"));
+                if (inSeconds <= 0) {
+                    cooldownText = objective
+                            .getScore(Utils.formatText("&e&lABILITY READY!"));
+                }
+
+                cooldownText.setScore(score--);
             }
 
-            cooldownText.setScore(score--);
-        }
+            if (!this.game.isPlayerVillager(player) || role == Role.DETECTIVE) {
+                Long cooldown = this.game.getKillCooldowns().get(player.getUniqueId());
+                if (cooldown == null) {
+                    cooldown = this.game.getKillCooldown();
+                    this.game.addKillCooldown(player.getUniqueId(), cooldown);
+                }
 
-        if (!this.game.isPlayerVillager(player) || role == Role.DETECTIVE) {
-            Long cooldown = this.game.getKillCooldowns().get(player.getUniqueId());
-            if (cooldown == null) {
-                cooldown = this.game.getKillCooldown();
-                this.game.addKillCooldown(player.getUniqueId(), cooldown);
+                long inSeconds = Math.max(0, Math.round(cooldown / 20));
+                Score cooldownText = objective
+                        .getScore(Utils.formatText("&8Kill Cooldown: &c&l" + inSeconds + "s"));
+                if (inSeconds <= 0) {
+                    cooldownText = objective
+                            .getScore(Utils.formatText("&c&lKILL READY!"));
+                }
+
+                cooldownText.setScore(score--);
             }
-
-            long inSeconds = Math.max(0, Math.round(cooldown / 20));
-            Score cooldownText = objective
-                    .getScore(Utils.formatText("&8Kill Cooldown: &c&l" + inSeconds + "s"));
-            if (inSeconds <= 0) {
-                cooldownText = objective
-                        .getScore(Utils.formatText("&c&lKILL READY!"));
-            }
-
-            cooldownText.setScore(score--);
         }
 
         Score completionText = objective

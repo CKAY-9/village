@@ -1,6 +1,5 @@
 package ca.ckay9.Game.Listeners;
 
-import org.bukkit.GameMode;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -22,7 +21,7 @@ public class PlayerJoin implements Listener {
             return;
         }
 
-        event.getPlayer().setGameMode(GameMode.SPECTATOR);
+        this.game.killPlayer(event.getPlayer(), true, false, null);
         event.getPlayer().teleport(this.game.getSpawnLocation());
         event.getPlayer().sendTitle(Utils.formatText("&a&lVILLAGE"), Utils.formatText("Spectating on-going &a&lVillage&r match"), 20, 80, 20);
     }

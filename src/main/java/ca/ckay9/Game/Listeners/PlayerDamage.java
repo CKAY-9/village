@@ -1,20 +1,11 @@
 package ca.ckay9.Game.Listeners;
 
-import org.bukkit.GameMode;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.entity.ArmorStand;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.inventory.EntityEquipment;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.SkullMeta;
 
-import ca.ckay9.Utils;
 import ca.ckay9.Game.Game;
 import ca.ckay9.Game.Role;
 import ca.ckay9.Game.Status;
@@ -55,35 +46,6 @@ public class PlayerDamage implements Listener {
             return;
         }
 
-        // Mob
-        Location damagedLocation = damaged.getLocation().add(0, 1, 0);
-        ArmorStand armorStand = (ArmorStand) damaged.getWorld().spawnEntity(damagedLocation, EntityType.ARMOR_STAND);
-        armorStand.setInvulnerable(true);
-        armorStand.setCustomName(Utils.formatText("&c&lBODY&r | &c&l" + damaged.getName()));
-        armorStand.setCustomNameVisible(true);
-
-        EntityEquipment equipment = armorStand.getEquipment();
-        ItemStack head = new ItemStack(Material.PLAYER_HEAD, 1);
-        SkullMeta headMeta = (SkullMeta) head.getItemMeta();
-        headMeta.setOwnerProfile(damaged.getPlayerProfile());
-        head.setItemMeta(headMeta);
-
-        equipment.setHelmet(head);
-        equipment.setChestplate(new ItemStack(Material.LEATHER_CHESTPLATE));
-        equipment.setLeggings(new ItemStack(Material.LEATHER_LEGGINGS));
-        equipment.setBoots(new ItemStack(Material.LEATHER_BOOTS));
-
-        damaged.setGameMode(GameMode.SPECTATOR);
-        if (damagerRole == Role.DETECTIVE) {
-            damaged.sendTitle(Utils.formatText("&c&lKILLED"),
-                    Utils.formatText("Detective &a&l" + damager.getName() + "&r has killed you"), 20, 80, 20);
-        } else {
-            damaged.sendTitle(Utils.formatText("&c&lKILLED"),
-                    Utils.formatText("You have been killed by &c&l" + damager.getName()), 20, 80, 20);
-        }
-
-        this.game.addKillCooldown(damager.getUniqueId(), this.game.getKillCooldown());
-        this.game.addTimeOfDeath(damaged.getUniqueId(), this.game.getGameLoop().getTicksSinceStart());
-        this.game.checkWinCondition();
+        this.game.killPlayer(damaged, false, true, damager);
     }
 }

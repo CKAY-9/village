@@ -106,6 +106,8 @@ public class VillageCommand implements CommandExecutor {
                     "&a - task-win: Toggle allowing Villagers to win on task compleition"));
             player.sendMessage(Utils.formatText(
                     "&a - ability-cooldown (number: required, ticks): Set the abilitiy cooldown in ticks"));
+            player.sendMessage(Utils.formatText(
+                    "&a - mob-count (number: required): Set the amount of mobs"));
             return false;
         }
 
@@ -151,7 +153,8 @@ public class VillageCommand implements CommandExecutor {
                     if (this.village.getGame().saveCurrentGameConfig(saveTargetID)) {
                         player.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Loaded " + saveTargetID + " config."));
                     } else {
-                        player.sendMessage(Utils.formatText("&c&l[VILLAGE]&r&c Failed to load " + saveTargetID + " config!"));
+                        player.sendMessage(
+                                Utils.formatText("&c&l[VILLAGE]&r&c Failed to load " + saveTargetID + " config!"));
                     }
                     break;
                 case "load":
@@ -164,7 +167,8 @@ public class VillageCommand implements CommandExecutor {
                     if (this.village.getGame().loadFromSaveID(player.getWorld(), loadTargetID)) {
                         player.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Loaded " + loadTargetID + " config."));
                     } else {
-                        player.sendMessage(Utils.formatText("&c&l[VILLAGE]&r&c Failed to load " + loadTargetID + " config!"));
+                        player.sendMessage(
+                                Utils.formatText("&c&l[VILLAGE]&r&c Failed to load " + loadTargetID + " config!"));
                     }
                     break;
                 case "tasks-needed":
@@ -176,6 +180,11 @@ public class VillageCommand implements CommandExecutor {
                                 Utils.formatText("&c&l[Village]&r&c Failed to update needed task count. Max value: &c&l"
                                         + this.village.getGame().getVillagerTasks().size()));
                     }
+                    break;
+                case "mob-count":
+                    int mobCount = Integer.valueOf(args[1].strip());
+                    this.village.getGame().setMobCount(mobCount);
+                    player.sendMessage(Utils.formatText("&a&l[Village]&r&a Updated mob count."));
                     break;
                 case "kill-cooldown":
                     long killCooldown = Long.valueOf(args[1].strip());

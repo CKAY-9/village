@@ -45,6 +45,7 @@ public class VillageCompletor implements TabCompleter {
                     options.add("max-button");
                     options.add("task-win");
                     options.add("ability-cooldown");
+                    options.add("mob-count");
                 } else {
                     options.add("end");
                     options.add("force-villager");
@@ -61,6 +62,7 @@ public class VillageCompletor implements TabCompleter {
                     case "tasks-needed":
                     case "voting-time":
                     case "discussion-time":
+                    case "mob-count":
                         options.add("0");
                         break;
                     case "save":
@@ -73,7 +75,7 @@ public class VillageCompletor implements TabCompleter {
                             options.add(p.getName());
                         }
                         break;
-                
+
                     default:
                         break;
                 }

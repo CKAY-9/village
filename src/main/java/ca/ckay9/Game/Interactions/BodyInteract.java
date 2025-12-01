@@ -1,7 +1,6 @@
 package ca.ckay9.Game.Interactions;
 
 import org.bukkit.Bukkit;
-import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.ArmorStand;
@@ -83,8 +82,7 @@ public class BodyInteract implements Listener {
                 if (role == Role.MEDIC && bodyPlayer != null) {
                     this.game.addAbilityCooldown(player.getUniqueId(), this.game.getAbilityCooldown());
                     player.sendMessage(Utils.formatText("&b&l[MAGIC CARROT]&r&b Revived &a&lVillager."));
-                    bodyPlayer.teleport(armorStand.getLocation());
-                    bodyPlayer.setGameMode(GameMode.ADVENTURE);
+                    this.game.revivePlayer(bodyPlayer, armorStand.getLocation());
                     armorStand.remove();
                     return;
                 }
