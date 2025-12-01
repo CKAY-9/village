@@ -125,7 +125,7 @@ public class VillageCommand implements CommandExecutor {
                     Utils.formatText("&c&l[VILLAGE]&r&c Usage: /village save id"));
             return;
         }
-        
+
         String saveTargetID = args[1].strip();
         sender.sendMessage(Utils.formatText("&e&l[VILLAGE]&r&e Saving " + saveTargetID + " config..."));
 
@@ -144,8 +144,8 @@ public class VillageCommand implements CommandExecutor {
             return;
         }
 
-        sender.sendMessage(Utils.formatText("&e&l[VILLAGE]&r&e Loading world config..."));
         String loadTargetID = args[2].strip();
+        sender.sendMessage(Utils.formatText("&e&l[VILLAGE]&r&e Loading " + loadTargetID + " config..."));
         String worldNameToLoad = args[1].strip();
 
         World worldToLoad = Bukkit.getWorld(worldNameToLoad);
