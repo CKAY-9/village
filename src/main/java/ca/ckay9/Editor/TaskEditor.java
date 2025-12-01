@@ -44,7 +44,7 @@ public class TaskEditor implements Listener {
         Utils.verbosePlayerLog(player, "Removed task at position " + location.getBlockX() + ", " + location.getBlockY()
                 + ", " + location.getBlockZ());
         player.sendMessage(Utils
-                .formatText("&a&l[Village]&r&a Removed task."));
+                .formatText("&a&l[VILLAGE]&r&a Removed task."));
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -65,30 +65,35 @@ public class TaskEditor implements Listener {
             return;
         }
 
+        if (blockMat == Material.ENCHANTING_TABLE) {
+            event.setCancelled(true);
+            Utils.verbosePlayerLog(player, "Tried to create custom task. Non-implemented");
+            player.sendMessage(
+                    Utils.formatText("&c&l[VILLAGE] Custom tasks are currently not implemented into Village."));
+            return;
+        }
+
         if (blockMat == Material.OBSERVER && this.game.uploadTaskCreated()) {
             event.setCancelled(true);
             Utils.verbosePlayerLog(player, "Tried to create upload task twice");
             player.sendMessage(Utils
-                    .formatText("&c&l[Village]&r&c Two upload task blocks already exist. Break one to move."));
+                    .formatText("&c&l[VILLAGE]&r&c Two upload task blocks already exist. Break one to move."));
             return;
         }
 
         VillagerTask task = new VillagerTask(block);
         if (blockMat == Material.SMITHING_TABLE) {
-            // math task
             task.setTaskType(VillagerTaskType.MATH);
         } else if (blockMat == Material.CRAFTING_TABLE) {
-            // craft task
             task.setTaskType(VillagerTaskType.CRAFT);
         } else if (blockMat == Material.LECTERN) {
-            // trivia task
             task.setTaskType(VillagerTaskType.TRIVIA);
         } else if (blockMat == Material.ENCHANTING_TABLE) {
-            // custom task
             task.setTaskType(VillagerTaskType.CUSTOM);
         } else if (blockMat == Material.OBSERVER) {
-            // uplaod task
             task.setTaskType(VillagerTaskType.UPLOAD);
+        } else if (blockMat == Material.DISPENSER) {
+            task.setTaskType(VillagerTaskType.MANIFOLD);
         } else {
             event.setCancelled(true);
             return;
@@ -99,6 +104,6 @@ public class TaskEditor implements Listener {
         Utils.verbosePlayerLog(player, "Created new task at position " + location.getBlockX() + ", "
                 + location.getBlockY() + ", " + location.getBlockZ());
         player.sendMessage(Utils
-                .formatText("&a&l[Village]&r&a Created new task! Villagers will now be able to complete this"));
+                .formatText("&a&l[VILLAGE]&r&a Created new task! Villagers will now be able to complete this"));
     }
 }

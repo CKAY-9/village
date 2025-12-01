@@ -16,6 +16,7 @@ import org.bukkit.GameMode;
 import org.bukkit.GameRule;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
@@ -39,6 +40,7 @@ import ca.ckay9.Game.Commands.VoteCommand;
 import ca.ckay9.Game.Commands.VoteCompletor;
 import ca.ckay9.Game.Interactions.BodyInteract;
 import ca.ckay9.Game.Interactions.MagicWandInteract;
+import ca.ckay9.Game.Interactions.ManifoldTaskInteract;
 import ca.ckay9.Game.Interactions.MeetingButtonInteract;
 import ca.ckay9.Game.Interactions.VentInteract;
 import ca.ckay9.Game.Interactions.VillagerTaskInteract;
@@ -85,6 +87,7 @@ public class Game {
     private int maxButtonUses; // how many times can each player use the button
     private boolean allowTaskWin; // if set to true, villagers can win if they finish all their tasks
     private HashMap<UUID, UploadPart> uploadParts;
+    private HashMap<UUID, Integer> manifoldTaskExpectedNext;
 
     public Game(Village village) {
         this.village = village;
@@ -97,6 +100,7 @@ public class Game {
         this.meetingButton = null;
         this.chatTaskExpectedResults = new HashMap<>();
         this.craftTaskExpectedResults = new HashMap<>();
+        this.manifoldTaskExpectedNext = new HashMap<>();
         this.mobCount = 1;
         this.tasksPerVillager = 1;
         this.gameLoop = null;
@@ -128,9 +132,26 @@ public class Game {
         manager.registerEvents(new PlayerDropItem(this), village);
         manager.registerEvents(new PlayerJoin(this), village);
         manager.registerEvents(new MagicWandInteract(this), village);
+        manager.registerEvents(new ManifoldTaskInteract(this), village);
 
         village.getCommand("vote").setExecutor(new VoteCommand(this));
         village.getCommand("vote").setTabCompleter(new VoteCompletor());
+    }
+
+    public HashMap<UUID, Integer> getManifoldTaskExpectedNexts() {
+        return this.manifoldTaskExpectedNext;
+    }
+
+    public void setManifoldTaskExpectedNexts(HashMap<UUID, Integer> nexts) {
+        this.manifoldTaskExpectedNext = nexts;
+    }
+
+    public void addManifoldTaskExpectedNext(UUID playerUUID, Integer next) {
+        this.manifoldTaskExpectedNext.put(playerUUID, next);
+    }
+
+    public void removeManifoldTaskExpectedNext(UUID playerUUID) {
+        this.manifoldTaskExpectedNext.remove(playerUUID);
     }
 
     public HashMap<UUID, UploadPart> getUploadParts() {
@@ -765,6 +786,7 @@ public class Game {
         long distance = 2;
         int i = 0;
         for (Player p : Bukkit.getOnlinePlayers()) {
+            p.playSound(p.getLocation(), Sound.ITEM_GOAT_HORN_SOUND_1, 5, 1);
             p.sendTitle(Utils.formatText("&b&lMEETING"),
                     Utils.formatText("Called by &a&l" + caller.getName() + "&r. " + reason), 20,
                     80, 20);
@@ -792,6 +814,7 @@ public class Game {
         Utils.verboseLog("Started voting.");
 
         for (Player p : Bukkit.getOnlinePlayers()) {
+            p.playSound(p.getLocation(), Sound.ENTITY_FIREWORK_ROCKET_BLAST, 5, 1);
             if (!this.isPlayerDead(p)) {
                 p.setAllowFlight(false);
                 p.setFlying(false);
@@ -929,6 +952,7 @@ public class Game {
         Collections.shuffle(players);
         List<Player> selected = players.subList(0, Math.min(getMobCount(), players.size()));
         for (Player p : players) {
+            p.playSound(p.getLocation(), Sound.ITEM_GOAT_HORN_SOUND_0, 5, 1);
             if (selected.contains(p)) {
                 setPlayerToMob(p);
             } else {
@@ -1021,6 +1045,9 @@ public class Game {
         this.buttonUses.clear();
         this.votes.clear();
         this.uploadParts.clear();
+        this.manifoldTaskExpectedNext.clear();
+        this.chatTaskExpectedResults.clear();
+        this.craftTaskExpectedResults.clear();
         this.completedAllTasks = false;
 
         this.gameLoop = null;
@@ -1419,6 +1446,8 @@ public class Game {
         }
 
         if (killer != null && !silent) {
+            toKill.playSound(toKill.getLocation(), Sound.ENTITY_WITHER_SPAWN, 5, 1);
+
             Role killerRole = this.getPlayerRole(killer.getUniqueId());
             if (killerRole == Role.DETECTIVE) {
                 toKill.sendTitle(Utils.formatText("&c&lKILLED"),

@@ -68,7 +68,7 @@ public class Editor {
         village.getEditor().addEditor(player.getUniqueId(), EditorState.VENT);
         player.sendMessage(Utils
                 .formatText(
-                        "&a&l[Village]&r&a Vent Editor enabled. Use any of the tools to make/manage vents. Break a vent to remove and delink it."));
+                        "&a&l[VILLAGE]&r&a Vent Editor enabled. Use any of the tools to make/manage vents. Break a vent to remove and delink it."));
     }
 
     /**
@@ -84,12 +84,12 @@ public class Editor {
         // give player tools
         ItemStack mathTool = new ItemStack(Material.SMITHING_TABLE, 1);
         ItemMeta mathMeta = mathTool.getItemMeta();
-        mathMeta.setDisplayName(Utils.formatText("&aMATH TASK / PLACE TO CREATE"));
+        mathMeta.setDisplayName(Utils.formatText("&dMATH TASK / PLACE TO CREATE"));
         mathTool.setItemMeta(mathMeta);
 
         ItemStack craftTool = new ItemStack(Material.CRAFTING_TABLE, 1);
         ItemMeta craftMeta = craftTool.getItemMeta();
-        craftMeta.setDisplayName(Utils.formatText("&bCRAFT TASK / PLACE TO CREATE"));
+        craftMeta.setDisplayName(Utils.formatText("&5CRAFT TASK / PLACE TO CREATE"));
         craftTool.setItemMeta(craftMeta);
 
         ItemStack triviaTool = new ItemStack(Material.LECTERN, 1);
@@ -99,12 +99,17 @@ public class Editor {
 
         ItemStack uploadTool = new ItemStack(Material.OBSERVER, 1);
         ItemMeta uploadMeta = uploadTool.getItemMeta();
-        uploadMeta.setDisplayName(Utils.formatText("&6UPLOAD TASK / PLACE 2"));
+        uploadMeta.setDisplayName(Utils.formatText("&eUPLOAD TASK / PLACE 2 TOTAL"));
         uploadTool.setItemMeta(uploadMeta);
+
+        ItemStack manifoldTool = new ItemStack(Material.DISPENSER, 1);
+        ItemMeta manifoldMeta = manifoldTool.getItemMeta();
+        manifoldMeta.setDisplayName(Utils.formatText("&2MANIFOLD TASK / PLACE TO CREATE"));
+        manifoldTool.setItemMeta(manifoldMeta);
 
         ItemStack customTool = new ItemStack(Material.ENCHANTING_TABLE, 1);
         ItemMeta customMeta = customTool.getItemMeta();
-        customMeta.setDisplayName(Utils.formatText("&6CUSTOM TASK / PLACE TO CREATE / RANDOMLY SELECTS"));
+        customMeta.setDisplayName(Utils.formatText("&aCUSTOM TASK / &c&lNON-IMPLEMENTED"));
         customTool.setItemMeta(customMeta);
 
         ItemStack exitTool = new ItemStack(Material.BARRIER, 1);
@@ -115,6 +120,7 @@ public class Editor {
         playerInventory.addItem(mathTool);
         playerInventory.addItem(craftTool);
         playerInventory.addItem(triviaTool);
+        playerInventory.addItem(manifoldTool);
         playerInventory.addItem(uploadTool);
         playerInventory.addItem(customTool);
         playerInventory.addItem(exitTool);
@@ -122,7 +128,7 @@ public class Editor {
         village.getEditor().addEditor(player.getUniqueId(), EditorState.TASK);
         player.sendMessage(Utils
                 .formatText(
-                        "&a&l[Village]&r&a Task Editor enabled. Use any of the tools to make tasks. Break a task to remove it."));
+                        "&a&l[VILLAGE]&r&a Task Editor enabled. Use any of the tools to make tasks. Break a task to remove it."));
     }
 
     /**
@@ -135,7 +141,7 @@ public class Editor {
         player.getInventory().clear();
         player.sendMessage(Utils
                 .formatText(
-                        "&a&l[Village]&r&a Editor disabled."));
+                        "&a&l[VILLAGE]&r&a Editor disabled."));
     }
 
     public HashMap<UUID, EditorState> getEditorStates() {

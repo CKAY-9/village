@@ -73,6 +73,11 @@ A craft task requires the Villager to craft a specified item. They are given the
 
 Example: `Craft: DIAMOND HOE` The Villager will craft a diamond hoe in any crafting table.
 
+#### Manifold Task
+
+A manifold task requires a Villager to input the correct order of items (represented by lights in an inventory). They have to enter Light 1, Light 2, ..., all the way until Light 9.
+If they fail to input the correct order, they fail the task.
+
 #### Upload Task
 
 Similar to Among Us' upload task, each map can have an upload task that every Villager has. It is a two part task where players must copy and upload for 20s total in two different locations.

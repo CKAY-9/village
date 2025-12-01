@@ -5,5 +5,6 @@ public enum VillagerTaskType {
     CRAFT,
     TRIVIA,
     UPLOAD,
+    MANIFOLD,
     CUSTOM
 }

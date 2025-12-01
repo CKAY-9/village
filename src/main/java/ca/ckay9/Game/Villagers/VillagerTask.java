@@ -1,13 +1,22 @@
 package ca.ckay9.Game.Villagers;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Random;
 import java.util.UUID;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.Levelled;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.BlockDataMeta;
 
 import ca.ckay9.Utils;
 import ca.ckay9.Village;
@@ -116,7 +125,36 @@ public class VillagerTask {
     }
 
     private void customTask(Player player, Game game) {
+        Utils.verbosePlayerLog(player, "Tried to complete custom task. Non-implemented");
+        player.sendMessage(
+                Utils.formatText("&c&l[VILLAGE] Custom tasks are currently not implemented into Village."));
+        this.completeTask(player, game);
+    }
 
+    private void manifoldTask(Player player, Game game) {
+        Inventory inv = Bukkit.createInventory(null, 9, Utils.formatText("&6&lMANIFOLD TASK"));
+        inv.clear();
+
+        Integer[] order = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+        ArrayList<Integer> shuffled = new ArrayList<>(Arrays.asList(order));
+        Collections.shuffle(shuffled);
+
+        for (int i = 0; i < shuffled.size(); i++) {
+            ItemStack stack = new ItemStack(Material.LIGHT);
+            BlockDataMeta meta = (BlockDataMeta) stack.getItemMeta();
+            BlockData data = stack.getType().createBlockData();
+            ((Levelled) data).setLevel(shuffled.get(i));
+            meta.setBlockData(data);
+            meta.setDisplayName(Utils.formatText("&b&l" + shuffled.get(i)));
+            stack.setItemMeta(meta);
+
+            inv.addItem(stack);
+        }
+
+        game.addManifoldTaskExpectedNext(player.getUniqueId(), 1);
+
+        player.closeInventory();
+        player.openInventory(inv);
     }
 
     private void uploadTask(Player player, Game game) {
@@ -218,6 +256,8 @@ public class VillagerTask {
             customTask(player, game);
         } else if (this.getTaskType() == VillagerTaskType.UPLOAD) {
             uploadTask(player, game);
+        } else {
+            manifoldTask(player, game);
         }
     }
 
@@ -238,6 +278,7 @@ public class VillagerTask {
      * @param player The player who completed the Task
      */
     public void completeTask(Player player, Game game) {
+        player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 5, 1);
         Utils.verbosePlayerLog(player, "Completed task.");
         this.assignedVillagers.put(player.getUniqueId(), true);
         player.sendMessage(Utils.formatText("&a&l[TASK]&r&a Completed task!"));
@@ -249,9 +290,10 @@ public class VillagerTask {
      * @param player The player who failed the task
      */
     public void failTask(Player player, Game game) {
+        player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_LAND, 5, 1);
         Utils.verbosePlayerLog(player, "Failed task.");
         this.assignedVillagers.put(player.getUniqueId(), false);
-        player.sendMessage(Utils.formatText("&c&l[TASK]&r&c Failed task! Retry by interacting with it."));
+        player.sendMessage(Utils.formatText("&c&l[TASK]&r&c Failed task! Try again."));
     }
 
     /**

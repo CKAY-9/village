@@ -14,6 +14,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import ca.ckay9.Utils;
 import ca.ckay9.Village;
 import ca.ckay9.Game.Game;
+import ca.ckay9.Game.Status;
 import ca.ckay9.Game.Villagers.ChatTaskProgress;
 import ca.ckay9.Game.Villagers.CraftTaskProgress;
 import ca.ckay9.Game.Villagers.VillagerTask;
@@ -54,8 +55,12 @@ public class VillagerTaskInteract implements Listener {
         if (task == null) {
             return;
         }
+        
 
         event.setCancelled(true);
+        if (this.game.getGameStatus() != Status.PLAYING) {
+            return;
+        }
 
         if (!task.assignedToThis(player.getUniqueId())) {
             player.sendMessage(Utils.formatText("&c&l[TASK]&r&c You aren't assigned to this task."));

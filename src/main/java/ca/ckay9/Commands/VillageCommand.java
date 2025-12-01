@@ -93,7 +93,7 @@ public class VillageCommand implements CommandExecutor {
         }
 
         sender.sendMessage(
-                Utils.formatText("&a&l[Village]&r&a Forced " + targetVillagerName + " to Villagers."));
+                Utils.formatText("&a&l[VILLAGE]&r&a Forced " + targetVillagerName + " to Villagers."));
         this.village.getGame().setPlayerToVillager(targetVillagerPlayer);
     }
 
@@ -115,7 +115,7 @@ public class VillageCommand implements CommandExecutor {
         }
 
         targetMobPlayer
-                .sendMessage(Utils.formatText("&a&l[Village]&r&a Forced " + targetMobName + " to Mobs."));
+                .sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Forced " + targetMobName + " to Mobs."));
         this.village.getGame().setPlayerToMob(targetMobPlayer);
     }
 
@@ -182,7 +182,7 @@ public class VillageCommand implements CommandExecutor {
 
         int mobCount = Integer.valueOf(args[1].strip());
         this.village.getGame().setMobCount(mobCount);
-        sender.sendMessage(Utils.formatText("&a&l[Village]&r&a Updated mob count."));
+        sender.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Updated mob count."));
     }
 
     private void handleKillCooldown(CommandSender sender, String[] args) {
@@ -194,7 +194,7 @@ public class VillageCommand implements CommandExecutor {
 
         long killCooldown = Long.valueOf(args[1].strip());
         this.village.getGame().setKillCooldown(killCooldown);
-        sender.sendMessage(Utils.formatText("&a&l[Village]&r&a Updated kill cooldown."));
+        sender.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Updated kill cooldown."));
     }
 
     private void handleDiscussionTime(CommandSender sender, String[] args) {
@@ -206,7 +206,7 @@ public class VillageCommand implements CommandExecutor {
 
         long discussionTime = Long.valueOf(args[1].strip());
         this.village.getGame().setDiscussionTime(discussionTime);
-        sender.sendMessage(Utils.formatText("&a&l[Village]&r&a Updated discussion time."));
+        sender.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Updated discussion time."));
     }
 
     private void handleVotingTime(CommandSender sender, String[] args) {
@@ -218,7 +218,7 @@ public class VillageCommand implements CommandExecutor {
 
         long votingTime = Long.valueOf(args[1].strip());
         this.village.getGame().setVotingTime(votingTime);
-        sender.sendMessage(Utils.formatText("&a&l[Village]&r&a Updated voting time."));
+        sender.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Updated voting time."));
     }
 
     private void handleButtonTime(CommandSender sender, String[] args) {
@@ -230,7 +230,7 @@ public class VillageCommand implements CommandExecutor {
 
         long buttonTime = Long.valueOf(args[1].strip());
         this.village.getGame().setMeetingButtonCooldown(buttonTime);
-        sender.sendMessage(Utils.formatText("&a&l[Village]&r&a Updated button cooldown."));
+        sender.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Updated button cooldown."));
     }
 
     private void handleMaxButtons(CommandSender sender, String[] args) {
@@ -242,18 +242,18 @@ public class VillageCommand implements CommandExecutor {
 
         int uses = Integer.valueOf(args[1].strip());
         this.village.getGame().setMaxMeetingButtonUses(uses);
-        sender.sendMessage(Utils.formatText("&a&l[Village]&r&a Updated max button uses."));
+        sender.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Updated max button uses."));
     }
 
     private void handleTaskWin(CommandSender sender) {
         if (!this.village.getGame().canWinOnTasks()) {
             this.village.getGame().setAllowTaskWin(true);
             sender.sendMessage(
-                    Utils.formatText("&a&l[Village]&r&a Allowing Task Completion win condition."));
+                    Utils.formatText("&a&l[VILLAGE]&r&a Allowing Task Completion win condition."));
         } else {
             this.village.getGame().setAllowTaskWin(false);
             sender.sendMessage(
-                    Utils.formatText("&a&l[Village]&r&a Ignoring Task Completion win condition."));
+                    Utils.formatText("&a&l[VILLAGE]&r&a Ignoring Task Completion win condition."));
         }
     }
 
@@ -266,20 +266,20 @@ public class VillageCommand implements CommandExecutor {
 
         long abilityCooldown = Long.valueOf(args[1].strip());
         this.village.getGame().setAbilityCooldown(abilityCooldown);
-        sender.sendMessage(Utils.formatText("&a&l[Village]&r&a Updated ability cooldown."));
+        sender.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Updated ability cooldown."));
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!sender.isOp()) {
             sender.sendMessage(
-                    Utils.formatText("&c&l[Village]&r&c You need to be a server operator to execute this command!"));
+                    Utils.formatText("&c&l[VILLAGE]&r&c You need to be a server operator to execute this command!"));
             return false;
         }
 
         if (args.length <= 0) {
             sender.sendMessage(Utils.formatText(
-                    "&a&l[Village]&r&a Command usage: /village [subcommand] [arguments]"));
+                    "&a&l[VILLAGE]&r&a Command usage: /village [subcommand] [arguments]"));
             if (sender instanceof Player) {
                 sender.sendMessage(Utils.formatText("&a - vent: Activate the Vent Editor"));
                 sender.sendMessage(Utils.formatText("&a - task: Activate the Task Editor"));

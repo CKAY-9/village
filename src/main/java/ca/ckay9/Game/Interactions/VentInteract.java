@@ -103,7 +103,7 @@ public class VentInteract implements Listener {
                 break;
             }
         }
-        player.playSound(player.getLocation(), Sound.BLOCK_IRON_TRAPDOOR_CLOSE, 5, 0);
+        player.playSound(player.getLocation(), Sound.BLOCK_IRON_TRAPDOOR_CLOSE, 5, 1);
     }
 
     @EventHandler(priority = EventPriority.LOWEST)

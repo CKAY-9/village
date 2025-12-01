@@ -54,7 +54,7 @@ public class VentEditor implements Listener {
         Utils.verbosePlayerLog(player, "Created new vent at position " + location.getBlockX() + ", "
                 + location.getBlockY() + ", " + location.getBlockZ());
         player.sendMessage(Utils
-                .formatText("&a&l[Village]&r&a Created new vent! Use can now use the link and destroy tool on it."));
+                .formatText("&a&l[VILLAGE]&r&a Created new vent! Use can now use the link and destroy tool on it."));
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -82,7 +82,7 @@ public class VentEditor implements Listener {
         Utils.verbosePlayerLog(player, "Removed vent at position " + location.getBlockX() + ", " + location.getBlockY()
                 + ", " + location.getBlockZ());
         player.sendMessage(Utils
-                .formatText("&a&l[Village]&r&a Removed vent! All connected vents have been delinked."));
+                .formatText("&a&l[VILLAGE]&r&a Removed vent! All connected vents have been delinked."));
     }
 
     /**
@@ -107,13 +107,13 @@ public class VentEditor implements Listener {
             existingLinkAttempt.addConnectedVent(target);
             this.ventLinks.remove(player.getUniqueId());
             Utils.verbosePlayerLog(player, "Linked two vents together.");
-            player.sendMessage(Utils.formatText("&a&l[Village]&r&a Linked vents!"));
+            player.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Linked vents!"));
         } else {
             // start
             this.ventLinks.put(player.getUniqueId(), target);
             Utils.verbosePlayerLog(player, "Initialized vent link.");
             player.sendMessage(Utils
-                    .formatText("&a&l[Village]&r&a Initialized link! Right click another vent with the tool to link."));
+                    .formatText("&a&l[VILLAGE]&r&a Initialized link! Right click another vent with the tool to link."));
         }
     }
 
