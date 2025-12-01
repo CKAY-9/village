@@ -466,12 +466,6 @@ public class Game {
      * @return true if successful, false if went over max
      */
     public void setTasksPerVillager(int value) {
-        int maxValue = this.getVillagerTasks().size();
-        if (value > maxValue) {
-            Utils.verboseLog("Attempted to set tasksPerVillager above max value.\n  -> max = " + maxValue
-                    + "\n  -> attempted value = " + value);
-        }
-
         this.tasksPerVillager = value;
     }
 
@@ -554,7 +548,8 @@ public class Game {
 
         if (this.getVillagerTasks().size() > 0) {
             Collections.shuffle(this.getVillagerTasks());
-            List<VillagerTask> selectedTasks = this.getVillagerTasks().subList(0, this.getTasksPerVillager());
+            List<VillagerTask> selectedTasks = this.getVillagerTasks().subList(0,
+                    this.getTasksPerVillager() - (this.uploadTaskCreated() ? 1 : 0));
 
             for (VillagerTask task : selectedTasks) {
                 if (task.getTaskType() == VillagerTaskType.UPLOAD) {
@@ -565,7 +560,8 @@ public class Game {
             }
         }
 
-        //player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 10_000_000, 255, false, false, false));
+        // player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS,
+        // 10_000_000, 255, false, false, false));
         this.revivePlayer(player, this.getSpawnLocation());
     }
 
@@ -938,10 +934,6 @@ public class Game {
             } else {
                 setPlayerToVillager(p);
             }
-        }
-
-        if (this.uploadTaskCreated()) {
-            this.setTasksPerVillager(this.getTasksPerVillager() + 1);
         }
 
         GameLoop loop = new GameLoop(this);
