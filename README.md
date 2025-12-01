@@ -82,7 +82,7 @@ If they fail to input the correct order, they fail the task.
 
 Similar to Among Us' upload task, each map can have an upload task that every Villager has. It is a two part task where players must copy and upload for 20s total in two different locations.
 
-### Medical Scan Task
+#### Medical Scan Task
 
 A Villager has to stand in the medical scanner for 10s. While scanning, other Villagers with the same task cannot use the scanner.
 
