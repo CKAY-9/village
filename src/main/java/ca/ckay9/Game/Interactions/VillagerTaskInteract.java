@@ -62,6 +62,12 @@ public class VillagerTaskInteract implements Listener {
             return;
         }
 
+        if (task.getTaskType() == VillagerTaskType.UPLOAD) {
+            // keeps track of state with this
+            task.startTask(player, this.game);
+            return;
+        }
+
         boolean isCrafting = task.getTaskType() == VillagerTaskType.CRAFT
                 || (task.getTaskType() == VillagerTaskType.CUSTOM && block.getType() == Material.CRAFTING_TABLE);
         boolean interactedWithCraftingTable = this.game.getCraftTaskExpectedResults().containsKey(player.getUniqueId());

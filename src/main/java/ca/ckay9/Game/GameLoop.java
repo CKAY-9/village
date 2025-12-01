@@ -8,6 +8,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.CompassMeta;
 
+import ca.ckay9.Game.Villagers.UploadPart;
 import ca.ckay9.Game.Villagers.VillagerTask;
 
 /*
@@ -68,6 +69,15 @@ public class GameLoop implements Runnable {
                 }
 
                 if (task.hasCompleted(player.getUniqueId())) {
+                    continue;
+                }
+
+                UploadPart part = this.game.getUploadParts().get(player.getUniqueId());
+                if (this.game.isFirstPartUpload(task.getBlock().getLocation()) && part != null) {
+                    continue;
+                }
+
+                if (!this.game.isFirstPartUpload(task.getBlock().getLocation()) && part != UploadPart.COPIED) {
                     continue;
                 }
 

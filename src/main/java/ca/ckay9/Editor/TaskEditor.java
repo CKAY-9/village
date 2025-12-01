@@ -41,7 +41,7 @@ public class TaskEditor implements Listener {
 
         this.game.removeVillagerTask(task);
         Location location = block.getLocation();
-        Utils.verbosePlayerLog(player, "Removed vent at position " + location.getBlockX() + ", " + location.getBlockY()
+        Utils.verbosePlayerLog(player, "Removed task at position " + location.getBlockX() + ", " + location.getBlockY()
                 + ", " + location.getBlockZ());
         player.sendMessage(Utils
                 .formatText("&a&l[Village]&r&a Removed task."));
@@ -65,6 +65,13 @@ public class TaskEditor implements Listener {
             return;
         }
 
+        if (blockMat == Material.OBSERVER && this.game.uploadTaskCreated()) {
+            Utils.verbosePlayerLog(player, "Tried to create upload task twice");
+            player.sendMessage(Utils
+                    .formatText("&a&l[Village]&r&a Two upload task blocks already exist. Break one to move."));
+            return;
+        }
+
         VillagerTask task = new VillagerTask(block);
         if (blockMat == Material.SMITHING_TABLE) {
             // math task
@@ -78,6 +85,9 @@ public class TaskEditor implements Listener {
         } else if (blockMat == Material.ENCHANTING_TABLE) {
             // custom task
             task.setTaskType(VillagerTaskType.CUSTOM);
+        } else if (blockMat == Material.OBSERVER) {
+            // uplaod task
+            task.setTaskType(VillagerTaskType.UPLOAD);
         } else {
             event.setCancelled(true);
             return;

@@ -30,7 +30,6 @@ public class Editor {
         manager.registerEvents(this.taskEditor, village);
     }
 
-    
     public boolean isPlayerEditing(Player player) {
         EditorState state = this.getEditorStates().get(player.getUniqueId());
         return state != null && (state == EditorState.TASK || state == EditorState.VENT);
@@ -98,6 +97,11 @@ public class Editor {
         triviaMeta.setDisplayName(Utils.formatText("&6TRIVIA TASK / PLACE TO CREATE"));
         triviaTool.setItemMeta(triviaMeta);
 
+        ItemStack uploadTool = new ItemStack(Material.OBSERVER, 1);
+        ItemMeta uploadMeta = uploadTool.getItemMeta();
+        uploadMeta.setDisplayName(Utils.formatText("&6UPLOAD TASK / PLACE 2"));
+        uploadTool.setItemMeta(uploadMeta);
+
         ItemStack customTool = new ItemStack(Material.ENCHANTING_TABLE, 1);
         ItemMeta customMeta = customTool.getItemMeta();
         customMeta.setDisplayName(Utils.formatText("&6CUSTOM TASK / PLACE TO CREATE / RANDOMLY SELECTS"));
@@ -111,6 +115,7 @@ public class Editor {
         playerInventory.addItem(mathTool);
         playerInventory.addItem(craftTool);
         playerInventory.addItem(triviaTool);
+        playerInventory.addItem(uploadTool);
         playerInventory.addItem(customTool);
         playerInventory.addItem(exitTool);
 

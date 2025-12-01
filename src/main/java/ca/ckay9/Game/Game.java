@@ -51,6 +51,7 @@ import ca.ckay9.Game.Listeners.PlayerMove;
 import ca.ckay9.Game.Mobs.Vent;
 import ca.ckay9.Game.Villagers.ChatTaskProgress;
 import ca.ckay9.Game.Villagers.CraftTaskProgress;
+import ca.ckay9.Game.Villagers.UploadPart;
 import ca.ckay9.Game.Villagers.VillagerTask;
 import ca.ckay9.Game.Villagers.VillagerTaskType;
 
@@ -84,6 +85,7 @@ public class Game {
     private HashMap<UUID, Integer> buttonUses; // how many times a player has pressed the meeting button
     private int maxButtonUses; // how many times can each player use the button
     private boolean allowTaskWin; // if set to true, villagers can win if they finish all their tasks
+    private HashMap<UUID, UploadPart> uploadParts;
 
     public Game(Village village) {
         this.village = village;
@@ -114,6 +116,7 @@ public class Game {
         this.allowTaskWin = false;
         this.timeOfDeaths = new HashMap<>();
         this.deadPlayers = new HashSet<>();
+        this.uploadParts = new HashMap<>();
 
         PluginManager manager = village.getServer().getPluginManager();
         manager.registerEvents(new VentInteract(this), village);
@@ -129,6 +132,44 @@ public class Game {
 
         village.getCommand("vote").setExecutor(new VoteCommand(this));
         village.getCommand("vote").setTabCompleter(new VoteCompletor());
+    }
+
+    public HashMap<UUID, UploadPart> getUploadParts() {
+        return this.uploadParts;
+    }
+
+    public void setUploadParts(HashMap<UUID, UploadPart> parts) {
+        this.uploadParts = parts;
+    }
+
+    public void addUploadPart(UUID playerUUID, UploadPart part) {
+        this.uploadParts.put(playerUUID, part);
+    }
+
+    public void removeUploadPart(UUID playerUUID) {
+        this.uploadParts.remove(playerUUID);
+    }
+
+    public boolean uploadTaskCreated() {
+        int total = 0;
+        for (VillagerTask t : this.getVillagerTasks()) {
+            if (t.getTaskType() == VillagerTaskType.UPLOAD) {
+                total++;
+            }
+        }
+
+        return total == 2;
+    }
+
+    public boolean isFirstPartUpload(Location partLocation) {
+        for (VillagerTask t : this.getVillagerTasks()) {
+            // first instance of upload
+            if (t.getTaskType() == VillagerTaskType.UPLOAD) {
+                return t.getBlock().getLocation().equals(partLocation);
+            }
+        }
+
+        return false;
     }
 
     public void setDeadPlayers(HashSet<UUID> hashSet) {
@@ -504,10 +545,25 @@ public class Game {
         player.setHealth(20);
         player.setSaturation(20);
 
+        if (this.uploadTaskCreated()) {
+            for (VillagerTask task : this.getVillagerTasks()) {
+                if (task.getTaskType() != VillagerTaskType.UPLOAD) {
+                    continue;
+                }
+
+                task.addAssignedVillager(player.getUniqueId());
+            }
+        }
+
         if (this.getVillagerTasks().size() > 0) {
             Collections.shuffle(this.getVillagerTasks());
             List<VillagerTask> selectedTasks = this.getVillagerTasks().subList(0, this.getTasksPerVillager());
+
             for (VillagerTask task : selectedTasks) {
+                if (task.getTaskType() == VillagerTaskType.UPLOAD) {
+                    continue;
+                }
+
                 task.addAssignedVillager(player.getUniqueId());
             }
         }
@@ -971,6 +1027,7 @@ public class Game {
         this.deadPlayers.clear();
         this.buttonUses.clear();
         this.votes.clear();
+        this.uploadParts.clear();
         this.completedAllTasks = false;
 
         this.gameLoop = null;

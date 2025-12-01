@@ -12,6 +12,7 @@ import org.bukkit.inventory.ItemStack;
 import ca.ckay9.Utils;
 import ca.ckay9.Village;
 import ca.ckay9.Game.Game;
+import ca.ckay9.Game.Status;
 
 public class VillagerTask {
     private Block block;
@@ -118,6 +119,71 @@ public class VillagerTask {
 
     }
 
+    private void uploadTask(Player player, Game game) {
+        UUID playerUUID = player.getUniqueId();
+
+        UploadPart part = game.getUploadParts().get(playerUUID);
+        if (!game.isFirstPartUpload(this.getBlock().getLocation()) && part != UploadPart.COPIED) {
+            player.sendMessage(Utils.formatText("&c&l[UPLOAD TASK]&r&c You haven't copied the files."));
+            return;
+        }
+
+        if (game.isFirstPartUpload(this.getBlock().getLocation()) && part != null) {
+            player.sendMessage(Utils.formatText("&c&l[UPLOAD TASK]&r&c You've have already copied the files."));
+            return;
+        }
+
+        if (part == null) {
+            part = UploadPart.COPYING;
+            game.addUploadPart(playerUUID, part);
+            player.sendTitle(Utils.formatText("&6&lCOPYING"), Utils.formatText("Copying files... please wait"), 10, 180,
+                    10);
+        } else if (part == UploadPart.COPYING || part == UploadPart.UPLOADING) {
+            return;
+        }
+
+        if (part == UploadPart.COPIED) {
+            player.sendTitle(Utils.formatText("&6&lUPLOADING"), Utils.formatText("Uploading files... please wait"), 10,
+                    180, 10);
+            part = UploadPart.UPLOADING;
+            game.addUploadPart(playerUUID, part);
+        }
+
+        final UploadPart fPart = part;
+
+        // copy files (1) -> go to other (2) -> upload files (3) -> done (4)
+
+        Utils.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(Utils.getPlugin(), new Runnable() {
+            @Override
+            public void run() {
+                if (!game.isGameInProgress()) {
+                    game.removeUploadPart(playerUUID);
+                    return;
+                }
+
+                // if cancelled by meeting
+                if (game.getGameStatus() != Status.PLAYING) {
+                    if (fPart == UploadPart.COPYING) {
+                        game.removeUploadPart(playerUUID);
+                    }
+
+                    return;
+                }
+
+                if (fPart == UploadPart.COPYING) {
+                    game.addUploadPart(playerUUID, UploadPart.COPIED);
+                    player.sendTitle(Utils.formatText("&6&lCOPIED"), Utils.formatText("Copied files to folder."), 10,
+                            40, 10);
+                } else if (fPart == UploadPart.UPLOADING) {
+                    player.sendTitle(Utils.formatText("&6&lUPLOADED"), Utils.formatText("Uploaded files to network."),
+                            10, 40, 10);
+                    game.addUploadPart(playerUUID, UploadPart.UPLOADED);
+                    completeTask(player, game);
+                }
+            }
+        }, 200L);
+    }
+
     public void unassignPlayer(UUID player) {
         this.assignedVillagers.remove(player);
     }
@@ -150,6 +216,8 @@ public class VillagerTask {
             triviaTask(player, game);
         } else if (this.getTaskType() == VillagerTaskType.CUSTOM) {
             customTask(player, game);
+        } else if (this.getTaskType() == VillagerTaskType.UPLOAD) {
+            uploadTask(player, game);
         }
     }
 
@@ -247,6 +315,8 @@ public class VillagerTask {
             this.getBlock().setType(Material.SMITHING_TABLE);
         } else if (taskType == VillagerTaskType.TRIVIA) {
             this.getBlock().setType(Material.LECTERN);
+        } else if (taskType == VillagerTaskType.UPLOAD) {
+            this.getBlock().setType(Material.OBSERVER);
         } else if (taskType == VillagerTaskType.CUSTOM) {
             this.getBlock().setType(Material.ENCHANTING_TABLE);
         }
