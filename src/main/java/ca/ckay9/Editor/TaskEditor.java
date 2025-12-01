@@ -39,6 +39,7 @@ public class TaskEditor implements Listener {
             return;
         }
 
+        task.destroy();
         this.game.removeVillagerTask(task);
         Location location = block.getLocation();
         Utils.verbosePlayerLog(player, "Removed task at position " + location.getBlockX() + ", " + location.getBlockY()
@@ -81,6 +82,27 @@ public class TaskEditor implements Listener {
             return;
         }
 
+        if (blockMat == Material.REDSTONE_BLOCK) {
+            // check
+            for (int i = -1; i < 2; i++) {
+                for (int j = -1; j < 2; j++) {
+                    if (i == 0 && j == 0) {
+                        continue;
+                    }
+
+                    Block b = block.getRelative(i, 0, j);
+                    if (b != null && b.getType() != Material.AIR) {
+                        Utils.verbosePlayerLog(player, "Invalid medical scan position");
+                        event.setCancelled(true);
+                        player.sendMessage(Utils
+                                .formatText(
+                                        "&c&l[VILLAGE]&r&c Invalid medical scan location. Please try somewhere else."));
+                        return;
+                    }
+                }
+            }
+        }
+
         VillagerTask task = new VillagerTask(block);
         if (blockMat == Material.SMITHING_TABLE) {
             task.setTaskType(VillagerTaskType.MATH);
@@ -94,6 +116,8 @@ public class TaskEditor implements Listener {
             task.setTaskType(VillagerTaskType.UPLOAD);
         } else if (blockMat == Material.DISPENSER) {
             task.setTaskType(VillagerTaskType.MANIFOLD);
+        } else if (blockMat == Material.REDSTONE_BLOCK) {
+            task.setTaskType(VillagerTaskType.MEDICAL_SCAN);
         } else {
             event.setCancelled(true);
             return;

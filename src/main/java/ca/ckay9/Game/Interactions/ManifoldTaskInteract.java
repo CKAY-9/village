@@ -48,7 +48,7 @@ public class ManifoldTaskInteract implements Listener {
 
         Utils.verboseLog("Found manifold task.");
 
-        Integer next = this.game.getManifoldTaskExpectedNexts().get(player.getUniqueId());
+        Integer next = task.getManifoldTaskExpectedNexts().get(player.getUniqueId());
         if (next == null) {
             next = 1;
         }
@@ -68,7 +68,7 @@ public class ManifoldTaskInteract implements Listener {
         Utils.verboseLog("Interacted with light.\n  -> Expected = " + next + "\n  -> Got = " + clickedValue);
         if (clickedValue != next) {
             // invalid
-            this.game.removeManifoldTaskExpectedNext(player.getUniqueId());
+            task.removeManifoldTaskExpectedNext(player.getUniqueId());
             task.failTask(player, game);
             player.closeInventory();
             return;
@@ -76,7 +76,7 @@ public class ManifoldTaskInteract implements Listener {
 
         if (clickedValue == 9) {
             // complete
-            this.game.addManifoldTaskExpectedNext(player.getUniqueId(), 10);
+            task.addManifoldTaskExpectedNext(player.getUniqueId(), 10);
             task.completeTask(player, game);
             player.closeInventory();
             return;
@@ -86,7 +86,7 @@ public class ManifoldTaskInteract implements Listener {
         clickedItem.setType(Material.GREEN_STAINED_GLASS_PANE);
         meta.setDisplayName(Utils.formatText("&a&lCORRECT"));
         clickedItem.setItemMeta(meta);
-        this.game.addManifoldTaskExpectedNext(player.getUniqueId(), next + 1);
+        task.addManifoldTaskExpectedNext(player.getUniqueId(), next + 1);
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -96,9 +96,14 @@ public class ManifoldTaskInteract implements Listener {
             return;
         }
 
-        Integer next = this.game.getManifoldTaskExpectedNexts().get(player.getUniqueId());
+        VillagerTask task = this.game.getManifoldByPlayer(player);
+        if (task == null) {
+            return;
+        }
+
+        Integer next = task.getManifoldTaskExpectedNexts().get(player.getUniqueId());
         if (next == null || next < 10) {
-            this.game.removeManifoldTaskExpectedNext(player.getUniqueId());
+            task.removeManifoldTaskExpectedNext(player.getUniqueId());
             return;
         }
     }

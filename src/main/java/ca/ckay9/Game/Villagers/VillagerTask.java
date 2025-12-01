@@ -8,11 +8,16 @@ import java.util.Random;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Color;
+import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Levelled;
+import org.bukkit.entity.AreaEffectCloud;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -27,23 +32,61 @@ public class VillagerTask {
     private Block block;
     private HashMap<UUID, Boolean> assignedVillagers;
     private VillagerTaskType taskType;
+    private HashMap<UUID, Integer> manifoldTaskExpectedNext; // used only for manifold tasks
+    private UUID scanning = null; // used only for medical scan tasks
+    private AreaEffectCloud effectCloud;
 
     public VillagerTask(Block block) {
         this.block = block;
         this.assignedVillagers = new HashMap<>();
         this.taskType = VillagerTaskType.MATH;
+        this.manifoldTaskExpectedNext = new HashMap<>();
     }
 
     public VillagerTask(Block block, HashMap<UUID, Boolean> assignedVillagers) {
         this.block = block;
         this.assignedVillagers = assignedVillagers;
         this.taskType = VillagerTaskType.MATH;
+        this.manifoldTaskExpectedNext = new HashMap<>();
     }
 
     public VillagerTask(Block block, HashMap<UUID, Boolean> assignedVillagers, VillagerTaskType taskType) {
         this.block = block;
         this.assignedVillagers = assignedVillagers;
         this.taskType = taskType;
+        this.manifoldTaskExpectedNext = new HashMap<>();
+    }
+
+    public AreaEffectCloud getEffectCloud() {
+        return this.effectCloud;
+    }
+
+    public void setEffectCloud(AreaEffectCloud cloud) {
+        this.effectCloud = cloud;
+    }
+
+    public HashMap<UUID, Integer> getManifoldTaskExpectedNexts() {
+        return this.manifoldTaskExpectedNext;
+    }
+
+    public void setManifoldTaskExpectedNexts(HashMap<UUID, Integer> nexts) {
+        this.manifoldTaskExpectedNext = nexts;
+    }
+
+    public void addManifoldTaskExpectedNext(UUID playerUUID, Integer next) {
+        this.manifoldTaskExpectedNext.put(playerUUID, next);
+    }
+
+    public void removeManifoldTaskExpectedNext(UUID playerUUID) {
+        this.manifoldTaskExpectedNext.remove(playerUUID);
+    }
+
+    public UUID getScanning() {
+        return this.scanning;
+    }
+
+    public void setScanning(UUID scanning) {
+        this.scanning = scanning;
     }
 
     private void mathTask(Player player, Game game) {
@@ -151,10 +194,39 @@ public class VillagerTask {
             inv.addItem(stack);
         }
 
-        game.addManifoldTaskExpectedNext(player.getUniqueId(), 1);
+        this.addManifoldTaskExpectedNext(player.getUniqueId(), 1);
 
         player.closeInventory();
         player.openInventory(inv);
+    }
+
+    private void medicalScanTask(Player player, Game game) {
+        if (this.getScanning() != null) {
+            // player using this
+            Player scanningPlayer = Bukkit.getPlayer(this.getScanning());
+            if (scanningPlayer == null) {
+                return;
+            }
+
+            player.sendMessage(Utils.formatText(
+                    "&c&l[MEDICAL SCAN]&r&c Waiting for &c&l" + scanningPlayer.getName() + "&r&c to finish."));
+            return;
+        }
+
+        player.teleport(this.getBlock().getLocation().add(0.5, 1, 0.5));
+        this.setScanning(player.getUniqueId());
+        player.sendTitle(Utils.formatText("&e&lSCANNING"), Utils.formatText("Reading vital signs..."), 20, 180, 20);
+        Utils.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(Utils.getPlugin(), new Runnable() {
+            @Override
+            public void run() {
+                setScanning(null);
+                if (game.getGameStatus() != Status.PLAYING) {
+                    return;
+                }
+
+                completeTask(player, game);
+            }
+        }, 200L);
     }
 
     private void uploadTask(Player player, Game game) {
@@ -256,6 +328,8 @@ public class VillagerTask {
             customTask(player, game);
         } else if (this.getTaskType() == VillagerTaskType.UPLOAD) {
             uploadTask(player, game);
+        } else if (this.getTaskType() == VillagerTaskType.MEDICAL_SCAN) {
+            medicalScanTask(player, game);
         } else {
             manifoldTask(player, game);
         }
@@ -345,11 +419,44 @@ public class VillagerTask {
         return this.taskType;
     }
 
+    public void showEffectCloud(Game game) {
+        createEffectCloud();
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (!game.isGameInProgress() || game.getGameStatus() != Status.PLAYING
+                    || !this.assignedToThis(player.getUniqueId()) || this.hasCompleted(player.getUniqueId())) {
+                player.hideEntity(Utils.getPlugin(), this.getEffectCloud());
+            } else if (!this.hasCompleted(player.getUniqueId())) {
+                player.showEntity(Utils.getPlugin(), this.getEffectCloud());
+            }
+        }
+    }
+
+    public void createEffectCloud() {
+        AreaEffectCloud cloud = this.getEffectCloud();
+        Location cloudLoc = this.getBlock().getLocation().add(0.5, 0.5, 0.5);
+        if (cloud == null) {
+            cloud = (AreaEffectCloud) this.getBlock().getWorld().spawnEntity(cloudLoc,
+                    EntityType.AREA_EFFECT_CLOUD);
+        }
+
+        cloud.setInvulnerable(true);
+        cloud.setGravity(false);
+        cloud.teleport(cloudLoc);
+        cloud.setDuration(Integer.MAX_VALUE);
+        cloud.setRadius(0.9f);
+        cloud.setParticle(Particle.REDSTONE, new Particle.DustOptions(Color.YELLOW, 1.5f));
+        cloud.setWaitTime(0);
+        cloud.setReapplicationDelay(0);
+
+        this.setEffectCloud(cloud);
+    }
+
     /**
      * @param taskType New value for the task type
      */
     public void setTaskType(VillagerTaskType taskType) {
         this.taskType = taskType;
+        createEffectCloud();
 
         if (taskType == VillagerTaskType.CRAFT) {
             this.getBlock().setType(Material.CRAFTING_TABLE);
@@ -361,6 +468,45 @@ public class VillagerTask {
             this.getBlock().setType(Material.OBSERVER);
         } else if (taskType == VillagerTaskType.CUSTOM) {
             this.getBlock().setType(Material.ENCHANTING_TABLE);
+        } else if (taskType == VillagerTaskType.MEDICAL_SCAN) {
+            this.getBlock().setType(Material.REDSTONE_BLOCK);
+
+            // corners
+            this.getBlock().getRelative(-1, 0, -1).setType(Material.AIR);
+            this.getBlock().getRelative(1, 0, 1).setType(Material.AIR);
+            this.getBlock().getRelative(1, 0, -1).setType(Material.AIR);
+            this.getBlock().getRelative(-1, 0, 1).setType(Material.AIR);
+
+            // sides
+            this.getBlock().getRelative(0, 0, 1).setType(Material.SMOOTH_QUARTZ_SLAB);
+            this.getBlock().getRelative(0, 0, -1).setType(Material.SMOOTH_QUARTZ_SLAB);
+            this.getBlock().getRelative(1, 0, 0).setType(Material.SMOOTH_QUARTZ_SLAB);
+            this.getBlock().getRelative(-1, 0, 0).setType(Material.SMOOTH_QUARTZ_SLAB);
         }
+    }
+
+    public void destroy() {
+        if (this.getTaskType() == VillagerTaskType.MEDICAL_SCAN) {
+            for (int i = -1; i < 2; i++) {
+                for (int j = -1; j < 2; j++) {
+                    if (i == 0 && j == 0) {
+                        continue;
+                    }
+
+                    Block b = this.getBlock().getRelative(i, 0, j);
+                    if (b != null && b.getType() != Material.AIR) {
+                        b.setType(Material.AIR);
+                    }
+                }
+            }
+        }
+
+        this.getEffectCloud().remove();
+        this.setEffectCloud(null);
+        this.block.setType(Material.AIR);
+
+        this.assignedVillagers.clear();
+        this.manifoldTaskExpectedNext.clear();
+        this.scanning = null;
     }
 }

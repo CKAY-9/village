@@ -6,5 +6,7 @@ public enum VillagerTaskType {
     TRIVIA,
     UPLOAD,
     MANIFOLD,
+    MEDICAL_SCAN,
+    CLEAN_BED,
     CUSTOM
 }

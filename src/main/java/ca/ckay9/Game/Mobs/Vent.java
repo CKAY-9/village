@@ -99,4 +99,8 @@ public class Vent {
     public void removeConnectedVent(Vent vent) {
         this.connectedVents.remove(vent);
     }
+
+    public void destroy() {
+        this.getBlock().setType(Material.AIR);
+    }
 }

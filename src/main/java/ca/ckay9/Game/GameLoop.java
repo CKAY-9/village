@@ -125,6 +125,12 @@ public class GameLoop implements Runnable {
             }
         }
 
+        if (this.getTicksInCurrentState() % 20 == 0) {
+            for (VillagerTask task : this.game.getVillagerTasks()) {
+                task.showEffectCloud(this.game);
+            }
+        }
+
         for (Player p : Bukkit.getOnlinePlayers()) {
             if (this.game.isPlayerVillager(p)) {
                 villagerOnTick(p);

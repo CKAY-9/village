@@ -26,7 +26,8 @@ public class VillageCommand implements CommandExecutor {
                 return;
             }
 
-            sender.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Invalid arguments, using your position as meeting location."));
+            sender.sendMessage(
+                    Utils.formatText("&a&l[VILLAGE]&r&a Invalid arguments, using your position as meeting location."));
             this.village.getGame().setMeetingLocation(((Player) sender).getLocation());
         } else {
             String worldName = args[1].strip();
@@ -54,7 +55,8 @@ public class VillageCommand implements CommandExecutor {
                 return;
             }
 
-            sender.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Invalid arguments, using your position as spawn location."));
+            sender.sendMessage(
+                    Utils.formatText("&a&l[VILLAGE]&r&a Invalid arguments, using your position as spawn location."));
             this.village.getGame().setSpawnLocation(((Player) sender).getLocation());
         } else {
             String worldName = args[1].strip();
@@ -171,6 +173,7 @@ public class VillageCommand implements CommandExecutor {
 
         int tasksNeeded = Integer.valueOf(args[1].strip());
         this.village.getGame().setTasksPerVillager(tasksNeeded);
+        sender.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Updated tasks per villager."));
     }
 
     private void handleMobCount(CommandSender sender, String[] args) {

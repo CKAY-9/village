@@ -87,7 +87,6 @@ public class Game {
     private int maxButtonUses; // how many times can each player use the button
     private boolean allowTaskWin; // if set to true, villagers can win if they finish all their tasks
     private HashMap<UUID, UploadPart> uploadParts;
-    private HashMap<UUID, Integer> manifoldTaskExpectedNext;
 
     public Game(Village village) {
         this.village = village;
@@ -100,7 +99,6 @@ public class Game {
         this.meetingButton = null;
         this.chatTaskExpectedResults = new HashMap<>();
         this.craftTaskExpectedResults = new HashMap<>();
-        this.manifoldTaskExpectedNext = new HashMap<>();
         this.mobCount = 1;
         this.tasksPerVillager = 1;
         this.gameLoop = null;
@@ -136,22 +134,6 @@ public class Game {
 
         village.getCommand("vote").setExecutor(new VoteCommand(this));
         village.getCommand("vote").setTabCompleter(new VoteCompletor());
-    }
-
-    public HashMap<UUID, Integer> getManifoldTaskExpectedNexts() {
-        return this.manifoldTaskExpectedNext;
-    }
-
-    public void setManifoldTaskExpectedNexts(HashMap<UUID, Integer> nexts) {
-        this.manifoldTaskExpectedNext = nexts;
-    }
-
-    public void addManifoldTaskExpectedNext(UUID playerUUID, Integer next) {
-        this.manifoldTaskExpectedNext.put(playerUUID, next);
-    }
-
-    public void removeManifoldTaskExpectedNext(UUID playerUUID) {
-        this.manifoldTaskExpectedNext.remove(playerUUID);
     }
 
     public HashMap<UUID, UploadPart> getUploadParts() {
@@ -1044,8 +1026,6 @@ public class Game {
         this.deadPlayers.clear();
         this.buttonUses.clear();
         this.votes.clear();
-        this.uploadParts.clear();
-        this.manifoldTaskExpectedNext.clear();
         this.chatTaskExpectedResults.clear();
         this.craftTaskExpectedResults.clear();
         this.completedAllTasks = false;
@@ -1060,6 +1040,32 @@ public class Game {
         if (caller != null) {
             caller.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Ended Village game."));
         }
+    }
+
+    /**
+     * Attempts to find the medscan task by player
+     * 
+     * @param player The player to check
+     * @return The medical scan task object or null
+     */
+    public VillagerTask getMedicalScanByPlayer(Player player) {
+        for (VillagerTask task : this.getVillagerTasks()) {
+            if (task.getScanning() != null && task.getScanning().equals(player.getUniqueId())) {
+                return task;
+            }
+        }
+
+        return null;
+    }
+
+    public VillagerTask getManifoldByPlayer(Player player) {
+        for (VillagerTask task : this.getVillagerTasks()) {
+            if (task.getManifoldTaskExpectedNexts().containsKey(player.getUniqueId())) {
+                return task;
+            }
+        }
+
+        return null;
     }
 
     public void setPlayerRole(UUID uuid, Role role) {
@@ -1561,6 +1567,24 @@ public class Game {
         ConfigurationSection section = Storage.worldsData.getConfigurationSection("saved." + id);
         if (section == null) {
             return false;
+        }
+
+        for (VillagerTask task : this.getVillagerTasks()) {
+            if (task == null) {
+                continue;
+            }
+
+            task.destroy();
+            removeVillagerTask(task);
+        }
+
+        for (Vent vent : this.getMobVents()) {
+            if (vent == null) {
+                continue;
+            }
+
+            vent.destroy();
+            removeMobVent(vent);
         }
 
         Utils.verboseLog("Loading gameplay values...");

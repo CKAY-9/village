@@ -9,12 +9,32 @@ import org.bukkit.event.player.PlayerMoveEvent;
 
 import ca.ckay9.Game.Game;
 import ca.ckay9.Game.Villagers.UploadPart;
+import ca.ckay9.Game.Villagers.VillagerTask;
 
 public class PlayerMove implements Listener {
     private Game game;
 
     public PlayerMove(Game game) {
         this.game = game;
+    }
+
+    private void cancelMovement(PlayerMoveEvent event) {
+        Location from = event.getFrom();
+        Location to = event.getTo();
+
+        if (to == null)
+            return;
+
+        float yaw = to.getYaw();
+        float pitch = to.getPitch();
+
+        event.setTo(new Location(
+                from.getWorld(),
+                from.getX(),
+                from.getY(),
+                from.getZ(),
+                yaw,
+                pitch));
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -29,22 +49,22 @@ public class PlayerMove implements Listener {
             return;
         }
 
-        Location from = event.getFrom();
-        Location to = event.getTo();
+        cancelMovement(event);
+    }
 
-        if (to == null)
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void scanTaskMovement(PlayerMoveEvent event) {
+        if (!this.game.isGameInProgress()) {
             return;
+        }
 
-        float yaw = to.getYaw();
-        float pitch = to.getPitch();
+        Player player = event.getPlayer();
+        VillagerTask task = this.game.getMedicalScanByPlayer(player);
+        if (task == null) {
+            return;
+        }
 
-        event.setTo(new Location(
-                from.getWorld(),
-                from.getX(),
-                from.getY(),
-                from.getZ(),
-                yaw,
-                pitch));
+        cancelMovement(event);
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -58,21 +78,6 @@ public class PlayerMove implements Listener {
             return;
         }
 
-        Location from = event.getFrom();
-        Location to = event.getTo();
-
-        if (to == null)
-            return;
-
-        float yaw = to.getYaw();
-        float pitch = to.getPitch();
-
-        event.setTo(new Location(
-                from.getWorld(),
-                from.getX(),
-                from.getY(),
-                from.getZ(),
-                yaw,
-                pitch));
+        cancelMovement(event);
     }
 }

@@ -107,9 +107,14 @@ public class Editor {
         manifoldMeta.setDisplayName(Utils.formatText("&2MANIFOLD TASK / PLACE TO CREATE"));
         manifoldTool.setItemMeta(manifoldMeta);
 
+        ItemStack scanTool = new ItemStack(Material.REDSTONE_BLOCK, 1);
+        ItemMeta scanMeta = scanTool.getItemMeta();
+        scanMeta.setDisplayName(Utils.formatText("&aMEDICAL SCAN TASK / PLACE TO CREATE"));
+        scanTool.setItemMeta(scanMeta);
+
         ItemStack customTool = new ItemStack(Material.ENCHANTING_TABLE, 1);
         ItemMeta customMeta = customTool.getItemMeta();
-        customMeta.setDisplayName(Utils.formatText("&aCUSTOM TASK / &c&lNON-IMPLEMENTED"));
+        customMeta.setDisplayName(Utils.formatText("&8CUSTOM TASK / &c&lNON-IMPLEMENTED"));
         customTool.setItemMeta(customMeta);
 
         ItemStack exitTool = new ItemStack(Material.BARRIER, 1);
@@ -121,6 +126,7 @@ public class Editor {
         playerInventory.addItem(craftTool);
         playerInventory.addItem(triviaTool);
         playerInventory.addItem(manifoldTool);
+        playerInventory.addItem(scanTool);
         playerInventory.addItem(uploadTool);
         playerInventory.addItem(customTool);
         playerInventory.addItem(exitTool);
