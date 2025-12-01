@@ -361,7 +361,7 @@ public class Game {
     public void addChatTaskExpectedResult(UUID uuid, ChatTaskProgress progress) {
         this.chatTaskExpectedResults.put(uuid, progress);
     }
-    
+
     public int getMobCount() {
         return this.mobCount;
     }
@@ -548,7 +548,7 @@ public class Game {
         player.getInventory().addItem(knife);
         player.setGameMode(GameMode.ADVENTURE);
         player.teleport(this.getSpawnLocation());
-    
+
         this.revivePlayer(player, this.getSpawnLocation());
     }
 
@@ -1336,6 +1336,9 @@ public class Game {
         try {
             Utils.verboseLog("Saving world config...");
             String root = "saved." + id + ".";
+
+            // reset
+            Storage.worldsData.set("saved." + id, null);
 
             Utils.verboseLog("Saving gameplay values...");
             Storage.worldsData.set(root + "tasksNeeded", this.getTasksPerVillager());

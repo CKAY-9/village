@@ -151,10 +151,10 @@ public class VillageCommand implements CommandExecutor {
                     }
 
                     if (this.village.getGame().saveCurrentGameConfig(saveTargetID)) {
-                        player.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Loaded " + saveTargetID + " config."));
+                        player.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Saved " + saveTargetID + " config."));
                     } else {
                         player.sendMessage(
-                                Utils.formatText("&c&l[VILLAGE]&r&c Failed to load " + saveTargetID + " config!"));
+                                Utils.formatText("&c&l[VILLAGE]&r&c Failed to save " + saveTargetID + " config!"));
                     }
                     break;
                 case "load":
