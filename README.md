@@ -46,9 +46,8 @@ To exit the editor, simply use right click the exit tool or use the command `/vi
 
 ### Tasks
 
-As mentioned before, there are tasks in Village. These are no necessary to gameplay but do provide another win condition for the villagers; however, if there are tasks and all of them are completed without the win condition, the Villagers will receive compasses that point towards a Mob.
-
-The generic tasks provided to are math (represented by a smithing table), trivia (represented by a lectern), and crafting (represented and uses a crafting table).
+As mentioned before, there are tasks in Village. A lot of these tasks are based off of the tasks found in Among Us; however, there are ones unique to Village like a crafting,
+doing simple math, etc. All of these tasks can be placed and removed by server operators to give whatever experience you want.
 
 <div align="center">
     <img src="./assets/crafttask.png" width=auto height=250 />
