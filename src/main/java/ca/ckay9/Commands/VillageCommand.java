@@ -125,9 +125,9 @@ public class VillageCommand implements CommandExecutor {
                     Utils.formatText("&c&l[VILLAGE]&r&c Usage: /village save id"));
             return;
         }
-
-        sender.sendMessage(Utils.formatText("&e&l[VILLAGE]&r&e Saving world config..."));
+        
         String saveTargetID = args[1].strip();
+        sender.sendMessage(Utils.formatText("&e&l[VILLAGE]&r&e Saving " + saveTargetID + " config..."));
 
         if (this.village.getGame().saveCurrentGameConfig(saveTargetID)) {
             sender.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Saved " + saveTargetID + " config."));
