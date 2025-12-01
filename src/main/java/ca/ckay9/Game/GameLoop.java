@@ -1,10 +1,14 @@
 package ca.ckay9.Game;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Particle;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.CompassMeta;
+
+import ca.ckay9.Game.Villagers.VillagerTask;
 
 /*
     This is responsible for the main game loop of Village. Keeps track of timings and everything related to the gameplay.
@@ -54,6 +58,25 @@ public class GameLoop implements Runnable {
                 }
 
                 item.setItemMeta(meta);
+            }
+        }
+
+        if (this.getTicksSinceStart() % 10 == 0) {
+            for (VillagerTask task : this.game.getVillagerTasks()) {
+                if (!task.assignedToThis(player.getUniqueId())) {
+                    continue;
+                }
+
+                if (task.hasCompleted(player.getUniqueId())) {
+                    continue;
+                }
+
+                Location loc = task.getBlock().getLocation();
+                for (double y = 0; y < 2.5; y += 0.2) {
+                    player.spawnParticle(Particle.END_ROD,
+                            loc.clone().add(0.5, y, 0.5),
+                            1, 0, 0, 0, 0);
+                }
             }
         }
     }
