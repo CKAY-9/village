@@ -66,6 +66,7 @@ public class TaskEditor implements Listener {
         }
 
         if (blockMat == Material.OBSERVER && this.game.uploadTaskCreated()) {
+            event.setCancelled(true);
             Utils.verbosePlayerLog(player, "Tried to create upload task twice");
             player.sendMessage(Utils
                     .formatText("&a&l[Village]&r&a Two upload task blocks already exist. Break one to move."));
