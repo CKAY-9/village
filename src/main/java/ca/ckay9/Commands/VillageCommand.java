@@ -20,44 +20,59 @@ public class VillageCommand implements CommandExecutor {
 
     public void handleMeeting(CommandSender sender, String[] args) {
         if (args.length < 5) {
-            sender.sendMessage(
-                    Utils.formatText("&c&l[VILLAGE]&r&c Usage: /village meeting world x y z."));
-            return;
+            if (!(sender instanceof Player)) {
+                sender.sendMessage(
+                        Utils.formatText("&c&l[VILLAGE]&r&c Usage: /village meeting world x y z."));
+                return;
+            }
+
+            sender.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Invalid arguments, using your position as meeting location."));
+            this.village.getGame().setMeetingLocation(((Player) sender).getLocation());
+        } else {
+            String worldName = args[1].strip();
+            World world = Bukkit.getWorld(worldName);
+            if (world == null) {
+                sender.sendMessage(
+                        Utils.formatText("&c&l[VILLAGE]&r&c Failed to set world."));
+                return;
+            }
+            double x = Double.valueOf(args[2].strip());
+            double y = Double.valueOf(args[3].strip());
+            double z = Double.valueOf(args[4].strip());
+
+            this.village.getGame().setMeetingLocation(new Location(world, x, y, z));
         }
 
-        String worldName = args[1].strip();
-        World world = Bukkit.getWorld(worldName);
-        if (world == null) {
-            sender.sendMessage(
-                    Utils.formatText("&c&l[VILLAGE]&r&c Failed to load world."));
-            return;
-        }
-        double x = Double.valueOf(args[2].strip());
-        double y = Double.valueOf(args[3].strip());
-        double z = Double.valueOf(args[4].strip());
-
-        this.village.getGame().setMeetingLocation(new Location(world, x, y, z));
+        sender.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Updated meeting location."));
     }
 
     public void handleSpawn(CommandSender sender, String[] args) {
         if (args.length < 5) {
-            sender.sendMessage(
-                    Utils.formatText("&c&l[VILLAGE]&r&c Usage: /village spawn world x y z."));
-            return;
+            if (!(sender instanceof Player)) {
+                sender.sendMessage(
+                        Utils.formatText("&c&l[VILLAGE]&r&c Usage: /village spawn world x y z."));
+                return;
+            }
+
+            sender.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Invalid arguments, using your position as spawn location."));
+            this.village.getGame().setSpawnLocation(((Player) sender).getLocation());
+        } else {
+            String worldName = args[1].strip();
+            World world = Bukkit.getWorld(worldName);
+            if (world == null) {
+                sender.sendMessage(
+                        Utils.formatText("&c&l[VILLAGE]&r&c Failed to set world."));
+                return;
+            }
+
+            double x = Double.valueOf(args[2].strip());
+            double y = Double.valueOf(args[3].strip());
+            double z = Double.valueOf(args[4].strip());
+
+            this.village.getGame().setMeetingLocation(new Location(world, x, y, z));
         }
 
-        String worldName = args[1].strip();
-        World world = Bukkit.getWorld(worldName);
-        if (world == null) {
-            sender.sendMessage(
-                    Utils.formatText("&c&l[VILLAGE]&r&c Failed to load world."));
-            return;
-        }
-        double x = Double.valueOf(args[2].strip());
-        double y = Double.valueOf(args[3].strip());
-        double z = Double.valueOf(args[4].strip());
-
-        this.village.getGame().setSpawnLocation(new Location(world, x, y, z));
+        sender.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Updated spawn location."));
     }
 
     private void handleForceVillager(CommandSender sender, String[] args) {
