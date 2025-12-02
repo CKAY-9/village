@@ -100,7 +100,7 @@ public class Game {
     private int meetingTableRadius; // how far away players should be teleported from the button
     private long lastTimeSabotageWasDisarmed; // last time sabotage was disarmed in ticks
 
-    public static long SABOTAGE_COOLDOWN = Utils.secondsToTicks(10);
+    public static long SABOTAGE_COOLDOWN = Utils.secondsToTicks(90);
 
     public Game(Village village) {
         this.village = village;
