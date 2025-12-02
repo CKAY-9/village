@@ -65,8 +65,9 @@ public class TaskEditor implements Listener {
         VillagerTask task = this.game.getTaskAtLocation(location);
         if (task != null) {
             // remove clean task
-            task.destroy();
             this.game.removeVillagerTask(task);
+            task.getEffectCloud().remove();
+            task.setEffectCloud(null);
             Utils.verbosePlayerLog(player, "Removed new clean vent task at position " + location.getBlockX() + ", "
                     + location.getBlockY() + ", " + location.getBlockZ());
             player.sendMessage(Utils
@@ -95,6 +96,13 @@ public class TaskEditor implements Listener {
         Player player = event.getPlayer();
         EditorState state = this.editor.getEditorStates().get(player.getUniqueId());
         if (state == null || state != EditorState.TASK) {
+            event.setCancelled(true);
+            return;
+        }
+
+        if (block.getType() == Material.IRON_TRAPDOOR) {
+            player.sendMessage(Utils
+                    .formatText("&a&l[VILLAGE]&r&a Can't break vent task, use tool."));
             event.setCancelled(true);
             return;
         }

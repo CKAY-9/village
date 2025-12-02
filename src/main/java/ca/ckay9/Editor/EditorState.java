@@ -4,4 +4,5 @@ public enum EditorState {
     NONE,
     VENT,
     TASK,
+    SABOTAGE,
 }

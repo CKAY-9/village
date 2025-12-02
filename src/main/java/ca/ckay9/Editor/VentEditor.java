@@ -32,7 +32,7 @@ public class VentEditor implements Listener {
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
-    public void onBlockPlace(BlockPlaceEvent event) {
+    public void placeVent(BlockPlaceEvent event) {
         Player player = event.getPlayer();
         EditorState state = this.editor.getEditorStates().get(player.getUniqueId());
         if (state == null || state != EditorState.VENT) {
@@ -58,7 +58,7 @@ public class VentEditor implements Listener {
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
-    public void onBlockBreak(BlockBreakEvent event) {
+    public void breakVent(BlockBreakEvent event) {
         Block block = event.getBlock();
         Vent vent = game.getVentAtLocation(block.getLocation());
         if (vent == null) {
@@ -118,7 +118,7 @@ public class VentEditor implements Listener {
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
-    public void onBlockInteraction(PlayerInteractEvent event) {
+    public void interactWithVent(PlayerInteractEvent event) {
         // check if right click
         if (event.getAction() != Action.RIGHT_CLICK_BLOCK) {
             return;

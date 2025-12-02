@@ -10,6 +10,7 @@ import org.bukkit.scoreboard.ScoreboardManager;
 
 import ca.ckay9.Utils;
 import ca.ckay9.Village;
+import ca.ckay9.Game.Mobs.Sabotage;
 
 public class HUD {
     private GameLoop gameLoop;
@@ -72,6 +73,15 @@ public class HUD {
             spectatingText.setScore(score--);
         }
 
+        Sabotage sabotage = this.game.getActiveSabotage();
+        if (sabotage != null) {
+            Score sabotageText = objective
+                    .getScore(Utils.formatText("&c&l" + sabotage.getSabotageType().toString() + "&r&c SABOTAGE &l("
+                            + Utils.ticksToSeconds(sabotage.getTimeRemaining(this.gameLoop.getTicksSinceStart()))
+                            + "s)"));
+            sabotageText.setScore(score--);
+        }
+
         Role role = this.game.getPlayerRole(player.getUniqueId());
         if (role != null) {
             Score roleText = objective.getScore(Utils.formatText("&8Role: &a&l" + role.toString()));
@@ -123,6 +133,13 @@ public class HUD {
                     + this.game.getAmountOfTasksForPlayers(player.getUniqueId());
             Score personalText = objective.getScore(Utils.formatText("&8Your Tasks: &a&l" + personalCompletion));
             personalText.setScore(score--);
+        } else {
+            Score sabotageCooldown = objective.getScore(Utils.formatText("&8Sabotage Cooldown: &c&l"
+                    + Utils.ticksToSeconds(this.game.getSabotageCooldown(this.gameLoop.getTicksSinceStart())) + "s"));
+            if (this.game.canActivateSabotage(this.gameLoop.getTicksSinceStart())) {
+                sabotageCooldown = objective.getScore(Utils.formatText("&c&lSABOTAGE READY"));
+            }
+            sabotageCooldown.setScore(score--);
         }
 
         StringBuilder taskCompletion = new StringBuilder();

@@ -32,7 +32,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
 
 import ca.ckay9.Storage;
 import ca.ckay9.Utils;
@@ -44,6 +43,11 @@ import ca.ckay9.Game.Interactions.CleanVentInteract;
 import ca.ckay9.Game.Interactions.MagicWandInteract;
 import ca.ckay9.Game.Interactions.ManifoldTaskInteract;
 import ca.ckay9.Game.Interactions.MeetingButtonInteract;
+import ca.ckay9.Game.Interactions.ReactorCallTool;
+import ca.ckay9.Game.Interactions.ReactorInteract;
+import ca.ckay9.Game.Interactions.SabotageInteract;
+import ca.ckay9.Game.Interactions.StabilizerCallTool;
+import ca.ckay9.Game.Interactions.StabilizerInteract;
 import ca.ckay9.Game.Interactions.VentInteract;
 import ca.ckay9.Game.Interactions.VillagerTaskInteract;
 import ca.ckay9.Game.Interactions.VoteInteract;
@@ -51,6 +55,8 @@ import ca.ckay9.Game.Listeners.PlayerDamage;
 import ca.ckay9.Game.Listeners.PlayerDropItem;
 import ca.ckay9.Game.Listeners.PlayerJoin;
 import ca.ckay9.Game.Listeners.PlayerMove;
+import ca.ckay9.Game.Mobs.Sabotage;
+import ca.ckay9.Game.Mobs.SabotageType;
 import ca.ckay9.Game.Mobs.Vent;
 import ca.ckay9.Game.Villagers.ChatTaskProgress;
 import ca.ckay9.Game.Villagers.CraftTaskProgress;
@@ -88,8 +94,13 @@ public class Game {
     private HashMap<UUID, Integer> buttonUses; // how many times a player has pressed the meeting button
     private int maxButtonUses; // how many times can each player use the button
     private boolean allowTaskWin; // if set to true, villagers can win if they finish all their tasks
-    private HashMap<UUID, UploadPart> uploadParts;
-    private int blindAmount;
+    private HashMap<UUID, UploadPart> uploadParts; // keep track of players
+    private int blindAmount; // how blind should villagers be in blocks
+    public HashSet<Sabotage> sabotages; // the list of possible sabotages
+    private int meetingTableRadius; // how far away players should be teleported from the button
+    private long lastTimeSabotageWasDisarmed; // last time sabotage was disarmed in ticks
+
+    public static long SABOTAGE_COOLDOWN = Utils.secondsToTicks(10);
 
     public Game(Village village) {
         this.village = village;
@@ -106,7 +117,7 @@ public class Game {
         this.tasksPerVillager = 1;
         this.gameLoop = null;
         this.gameLoopID = -1;
-        this.blindAmount = 1;
+        this.blindAmount = 10;
         this.completedAllTasks = false;
         this.killCooldowns = new HashMap<>();
         this.abilityCooldowns = new HashMap<>();
@@ -122,6 +133,9 @@ public class Game {
         this.timeOfDeaths = new HashMap<>();
         this.deadPlayers = new HashSet<>();
         this.uploadParts = new HashMap<>();
+        this.sabotages = new HashSet<>();
+        this.meetingTableRadius = 2;
+        this.lastTimeSabotageWasDisarmed = 0;
 
         PluginManager manager = village.getServer().getPluginManager();
         manager.registerEvents(new VentInteract(this), village);
@@ -136,9 +150,143 @@ public class Game {
         manager.registerEvents(new MagicWandInteract(this), village);
         manager.registerEvents(new ManifoldTaskInteract(this), village);
         manager.registerEvents(new CleanVentInteract(this), village);
+        manager.registerEvents(new SabotageInteract(this), village);
+        manager.registerEvents(new ReactorInteract(this), village);
+        manager.registerEvents(new ReactorCallTool(this), village);
+        manager.registerEvents(new StabilizerCallTool(this), village);
+        manager.registerEvents(new StabilizerInteract(this), village);
 
         village.getCommand("vote").setExecutor(new VoteCommand(this));
         village.getCommand("vote").setTabCompleter(new VoteCompletor());
+    }
+
+    public long getLastTimeSabotageWasDisarmed() {
+        return this.lastTimeSabotageWasDisarmed;
+    }
+
+    public void setLastTimeSabotageWasDisarmed(long value) {
+        this.lastTimeSabotageWasDisarmed = value;
+    }
+
+    /**
+     * 
+     * @param currentTimeInTicks
+     * @return Ticks before a sabotage can be used
+     */
+    public long getSabotageCooldown(long currentTimeInTicks) {
+        long duration = currentTimeInTicks - this.getLastTimeSabotageWasDisarmed();
+        return Math.max(0, SABOTAGE_COOLDOWN - duration);
+    }
+
+    /**
+     * 
+     * @param currentTimeInTicks Ticks since start
+     * @return True if an active sabotage has been fixed for 90s. Will return false
+     *         if an active sabotage is on-going
+     */
+    public boolean canActivateSabotage(long currentTimeInTicks) {
+        Sabotage activeSabotage = this.getActiveSabotage();
+        if (activeSabotage != null) {
+            return false;
+        }
+
+        return this.getSabotageCooldown(currentTimeInTicks) <= 0;
+    }
+
+    /**
+     * Check if any sabotage is going on
+     * 
+     * @return True if one of the is, false otherwise
+     */
+    public boolean isSabotageActive() {
+        for (Sabotage sabotage : this.getSabotages()) {
+            if (sabotage.isActive()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * If there is a sabotage going on, get the active one
+     * 
+     * @return The sabotage object or null if not active
+     */
+    public Sabotage getActiveSabotage() {
+        for (Sabotage sabotage : this.getSabotages()) {
+            if (sabotage.isActive()) {
+                return sabotage;
+            }
+        }
+
+        return null;
+    }
+
+    public void setMeetingRadius(int value) {
+        this.meetingTableRadius = value;
+    }
+
+    public int getMeetingTableRadius() {
+        return this.meetingTableRadius;
+    }
+
+    public HashSet<Sabotage> getSabotages() {
+        return this.sabotages;
+    }
+
+    public void setSabotages(HashSet<Sabotage> sabotages) {
+        this.sabotages = sabotages;
+    }
+
+    public void addSabotage(Sabotage sabotage) {
+        this.sabotages.add(sabotage);
+    }
+
+    public void removeSabotage(Sabotage sabotage) {
+        this.sabotages.remove(sabotage);
+    }
+
+    /**
+     * Checks if this block is apart of a sabotage
+     * 
+     * @param block Interacted with
+     * @return The sabotage object or null if not found
+     */
+    public Sabotage getSabotageByStructure(Block block) {
+        Location loc = block.getLocation();
+        for (Sabotage sabotage : this.getSabotages()) {
+            for (int x = -1; x < 2; x++) {
+                for (int z = -1; z < 2; z++) {
+                    for (int y = 0; y < 5; y++) {
+                        if (x == 0 && y == 0 && z == 0) {
+                            continue;
+                        }
+
+                        Location oLoc = sabotage.getBlock().getLocation().add(x, y, z);
+                        if (loc.equals(oLoc)) {
+                            return sabotage;
+                        }
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param type What type of sabotage to check
+     * @return The sabotage object or null if not found
+     */
+    public Sabotage getSabotageByType(SabotageType type) {
+        for (Sabotage s : this.getSabotages()) {
+            if (s.getSabotageType() == type) {
+                return s;
+            }
+        }
+
+        return null;
     }
 
     public void setBlindAmount(int amount) {
@@ -623,10 +771,6 @@ public class Game {
             }
         }
 
-        if (this.shouldBlind()) {
-            player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS,
-                    10_000_000, this.getBlindAmount(), false, false, false));
-        }
         this.revivePlayer(player, this.getSpawnLocation());
     }
 
@@ -686,6 +830,26 @@ public class Game {
         knifeMeta.setDisplayName(Utils.formatText("&lKNIFE"));
         knife.setItemMeta(knifeMeta);
 
+        Sabotage reactor = this.getSabotageByType(SabotageType.REACTOR);
+        if (reactor != null) {
+            ItemStack reactorCall = new ItemStack(Material.TNT, 1);
+            ItemMeta reactorMeta = reactorCall.getItemMeta();
+            reactorMeta.setDisplayName(Utils.formatText("&c&lREACTOR SABOTAGE / RIGHT CLICK TO ACTIVATE"));
+            reactorCall.setItemMeta(reactorMeta);
+
+            player.getInventory().addItem(reactorCall);
+        }
+
+        Sabotage stabilizer = this.getSabotageByType(SabotageType.STABILIZER);
+        if (stabilizer != null) {
+            ItemStack stabilizerCall = new ItemStack(Material.BEACON, 1);
+            ItemMeta stabilizerMeta = stabilizerCall.getItemMeta();
+            stabilizerMeta.setDisplayName(Utils.formatText("&c&lSTABILZER SABOTAGE / RIGHT CLICK TO ACTIVATE"));
+            stabilizerCall.setItemMeta(stabilizerMeta);
+
+            player.getInventory().addItem(stabilizerCall);
+        }
+
         player.getInventory().addItem(knife);
         player.setGameMode(GameMode.ADVENTURE);
         player.teleport(this.getSpawnLocation());
@@ -706,6 +870,12 @@ public class Game {
         if (this.hasCompletedAllTasks() && this.canWinOnTasks()) {
             Utils.verboseLog("Task Completion win condition completed.");
             return WinCondition.TASK_COMPLETION;
+        }
+
+        Sabotage sabotage = this.getActiveSabotage();
+        if (sabotage != null && sabotage.shouldEndGame(this.getGameLoop().getTicksSinceStart())) {
+            Utils.verboseLog("Sabotage win condition completed.");
+            return WinCondition.SABOTAGE;
         }
 
         if (this.getAliveMobCount() >= this.getAliveVillagerCount()) {
@@ -733,6 +903,42 @@ public class Game {
                 Utils.formatText("You have been evicted by the &a&lVillagers"), 20, 80, 20);
     }
 
+    private void announceEnd(String subTitle, boolean mobWin) {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (this.isPlayerVillager(player)) {
+                if (!mobWin) {
+                    player.sendTitle(Utils.formatText("&a&lVICTORY"),
+                            Utils.formatText(subTitle), 20, 80, 20);
+                } else {
+                    player.sendTitle(Utils.formatText("&a&lDEFEAT"),
+                            Utils.formatText(subTitle), 20, 80, 20);
+                }
+            } else {
+                if (mobWin) {
+                    player.sendTitle(Utils.formatText("&a&lVICTORY"),
+                            Utils.formatText(subTitle), 20, 80, 20);
+                } else {
+                    player.sendTitle(Utils.formatText("&a&lDEFEAT"),
+                            Utils.formatText(subTitle), 20, 80, 20);
+                }
+            }
+
+            player.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Roles: "));
+            for (Player other : Bukkit.getOnlinePlayers()) {
+                Role role = this.getPlayerRole(other.getUniqueId());
+                if (role == null) {
+                    return;
+                }
+
+                if (this.isPlayerVillager(other)) {
+                    player.sendMessage(Utils.formatText("&a - " + other.getName() + ": &l" + role.toString()));
+                } else {
+                    player.sendMessage(Utils.formatText("&c - " + other.getName() + ": &l" + role.toString()));
+                }
+            }
+        }
+    }
+
     /**
      * Called after important events like meetings, kills, disconnects, etc.
      * If there is a win condition that's met, this will handle it and end the game
@@ -745,36 +951,16 @@ public class Game {
             return;
         }
 
+        this.setGameStatus(Status.POST_GAME);
+
         if (condition == WinCondition.MOBS_VOTED_OUT) {
-            for (Player player : Bukkit.getOnlinePlayers()) {
-                if (this.isPlayerVillager(player)) {
-                    player.sendTitle(Utils.formatText("&a&lVICTORY"),
-                            Utils.formatText("All &c&lMobs&r have been evicted."), 20, 80, 20);
-                } else {
-                    player.sendTitle(Utils.formatText("&c&lDEFEAT"),
-                            Utils.formatText("All &c&lMobs&r have been evicted."), 20, 80, 20);
-                }
-            }
+            this.announceEnd("All &c&lMobs&r have been evicted.", false);
+        } else if (condition == WinCondition.SABOTAGE) {
+            this.announceEnd("No one fixed the &c&lSabotage&r.", true);
         } else if (condition == WinCondition.MOB_OVERWHELM) {
-            for (Player player : Bukkit.getOnlinePlayers()) {
-                if (!this.isPlayerVillager(player)) {
-                    player.sendTitle(Utils.formatText("&a&lVICTORY"),
-                            Utils.formatText("The &a&lVillagers&r have been overwhelmed."), 20, 80, 20);
-                } else {
-                    player.sendTitle(Utils.formatText("&c&lDEFEAT"),
-                            Utils.formatText("The &a&lVillagers&r have been overwhelmed."), 20, 80, 20);
-                }
-            }
+            this.announceEnd("The &a&lVillagers&r have been overwhelmed.", true);
         } else if (condition == WinCondition.TASK_COMPLETION) {
-            for (Player player : Bukkit.getOnlinePlayers()) {
-                if (this.isPlayerVillager(player)) {
-                    player.sendTitle(Utils.formatText("&a&lVICTORY"),
-                            Utils.formatText("All &c&ltasks&r have been completed."), 20, 80, 20);
-                } else {
-                    player.sendTitle(Utils.formatText("&c&lDEFEAT"),
-                            Utils.formatText("All &c&ltasks&r have been completed."), 20, 80, 20);
-                }
-            }
+            this.announceEnd("All &c&ltasks&r have been completed.", false);
         }
 
         this.village.getServer().getScheduler().scheduleSyncDelayedTask(village, new Runnable() {
@@ -822,12 +1008,15 @@ public class Game {
      */
     public void startDiscussion(Player caller, String reason) {
         this.setGameStatus(Status.DISCUSSION);
+        for (Sabotage sabotage : this.getSabotages()) {
+            sabotage.deactivate(this);
+        }
+
         Bukkit.broadcastMessage(
                 Utils.formatText("&b&l[MEETING]&r&b Discussion started. Called by &a&l" + caller.getName()));
         Utils.verbosePlayerLog(caller, "Started meeting.\n  -> reason = " + reason);
 
         double increment = (Math.PI * 2) / Bukkit.getOnlinePlayers().size();
-        long distance = 2;
         int i = 0;
         for (Player p : Bukkit.getOnlinePlayers()) {
             p.closeInventory(); // clear any inventory tasks
@@ -836,8 +1025,8 @@ public class Game {
                     Utils.formatText("Called by &a&l" + caller.getName() + "&r. " + reason), 20,
                     80, 20);
 
-            double x = Math.cos(increment * i) * distance;
-            double z = Math.sin(increment * i) * distance;
+            double x = Math.cos(increment * i) * this.getMeetingTableRadius();
+            double z = Math.sin(increment * i) * this.getMeetingTableRadius();
             Location playerLoc = this.getMeetingLocation().clone();
             playerLoc.add(x, 0, z);
             p.teleport(playerLoc);
@@ -1005,6 +1194,12 @@ public class Game {
             }
         }
 
+        this.setLastTimeSabotageWasDisarmed(0);
+        for (Sabotage sabotage : this.getSabotages()) {
+            sabotage.getReactorProgress().clear();
+            sabotage.setActive(false);
+        }
+
         GameLoop loop = new GameLoop(this);
         this.gameLoop = loop;
         this.gameLoopID = Bukkit.getScheduler().scheduleSyncRepeatingTask(this.village, loop, 1L, 1L);
@@ -1036,7 +1231,6 @@ public class Game {
             return;
         }
 
-        this.setGameStatus(Status.POST_GAME);
         Utils.verboseLog("Ending Village game. Cleaning up.");
 
         this.chatTaskExpectedResults.clear();
@@ -1081,6 +1275,11 @@ public class Game {
 
             stand.teleport(new Location(stand.getWorld(), 0, 0, 0));
             stand.remove();
+        }
+
+        for (Sabotage sabotage : this.getSabotages()) {
+            sabotage.getReactorProgress().clear();
+            sabotage.setActive(false);
         }
 
         this.playerRoles.clear();
@@ -1229,6 +1428,22 @@ public class Game {
             Location l = t.getBlock().getLocation();
             if (l.equals(location)) {
                 return t;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Attempts to get the sabotage at the given location
+     * 
+     * @param location Where to check
+     * @return The sabotage object or null if not found
+     */
+    public Sabotage getSabotageAtLocation(Location location) {
+        for (Sabotage sabotage : this.getSabotages()) {
+            if (sabotage.getBlock().getLocation().equals(location)) {
+                return sabotage;
             }
         }
 
@@ -1584,6 +1799,20 @@ public class Game {
             }
 
             i = 0;
+            String sabotages = root + "sabotages.";
+            for (Sabotage sabotage : this.getSabotages()) {
+                Storage.worldsData.set(sabotages + "sabotage" + i + ".type", sabotage.getSabotageType().toString());
+
+                Location loc = sabotage.getBlock().getLocation();
+                Storage.worldsData.set(sabotages + "sabotage" + i + ".x", loc.getBlockX());
+                Storage.worldsData.set(sabotages + "sabotage" + i + ".y", loc.getBlockY());
+                Storage.worldsData.set(sabotages + "sabotage" + i + ".z", loc.getBlockZ());
+
+                Utils.verboseLog("Saved sabotage.");
+                i++;
+            }
+
+            i = 0;
             String vents = root + "vents.";
             for (Vent vent : this.getMobVents()) {
                 Location loc = vent.getBlock().getLocation();
@@ -1643,27 +1872,36 @@ public class Game {
             return false;
         }
 
-        if (this.getVillagerTasks() != null && this.getVillagerTasks().size() >= 1) {
-            for (VillagerTask task : this.getVillagerTasks()) {
-                if (task == null) {
-                    continue;
-                }
-
-                task.destroy();
-                removeVillagerTask(task);
+        for (VillagerTask task : this.getVillagerTasks()) {
+            if (task == null) {
+                continue;
             }
+
+            task.destroy();
+            removeVillagerTask(task);
         }
 
-        if (this.getVillagerTasks() != null && this.getMobVents().size() >= 1) {
-            for (Vent vent : this.getMobVents()) {
-                if (vent == null) {
-                    continue;
-                }
+        this.villagerTasks.clear();
 
-                vent.destroy();
-                removeMobVent(vent);
+        for (Vent vent : this.getMobVents()) {
+            if (vent == null) {
+                continue;
             }
+
+            vent.destroy();
         }
+
+        this.mobVents.clear();
+
+        for (Sabotage sabotage : this.getSabotages()) {
+            if (sabotage == null) {
+                continue;
+            }
+
+            sabotage.destroy();
+        }
+
+        this.sabotages.clear();
 
         Utils.verboseLog("Loading gameplay values...");
         this.setTasksPerVillager(section.getInt("tasksNeeded", this.getTasksPerVillager()));
@@ -1709,6 +1947,30 @@ public class Game {
                         + block.getLocation().getBlockZ());
             }
             Utils.formatText("Loaded saved tasks!");
+        }
+
+        ConfigurationSection savedSabotages = section.getConfigurationSection("sabotages");
+        if (savedSabotages != null) {
+            Utils.verboseLog("Loading saved sabotages...");
+            for (String key : savedSabotages.getKeys(false)) {
+                ConfigurationSection savedSabotage = savedSabotages.getConfigurationSection(key);
+                if (savedSabotage == null) {
+                    continue;
+                }
+
+                Block block = world.getBlockAt((int) savedSabotage.getDouble("x", 0),
+                        (int) savedSabotage.getDouble("y", 0),
+                        (int) savedSabotage.getDouble("z", 0));
+                Sabotage sabotage = new Sabotage(block);
+                sabotage.setSabotageType(SabotageType.valueOf(savedSabotage.getString("type", "REACTOR")));
+                sabotage.build();
+                this.addSabotage(sabotage);
+
+                Utils.verboseLog("Loaded saved " + sabotage.getSabotageType().toString() + " sabotage at position "
+                        + block.getLocation().getBlockX() + ", " + block.getLocation().getBlockY() + ", "
+                        + block.getLocation().getBlockZ());
+            }
+            Utils.formatText("Loaded saved sabotages!");
         }
 
         ConfigurationSection savedVents = section.getConfigurationSection("vents");

@@ -18,16 +18,19 @@ public class Editor {
     private Village village;
     private VentEditor ventEditor;
     private TaskEditor taskEditor;
+    private SabotageEditor sabotageEditor;
 
     public Editor(Village village) {
         this.village = village;
         this.editorStates = new HashMap<>();
         this.ventEditor = new VentEditor(this, village.getGame());
         this.taskEditor = new TaskEditor(this, village.getGame());
+        this.sabotageEditor = new SabotageEditor(this, village.getGame());
 
         PluginManager manager = village.getServer().getPluginManager();
         manager.registerEvents(this.ventEditor, village);
         manager.registerEvents(this.taskEditor, village);
+        manager.registerEvents(this.sabotageEditor, village);
     }
 
     public boolean isPlayerEditing(Player player) {
@@ -114,7 +117,7 @@ public class Editor {
 
         ItemStack ventCleanTool = new ItemStack(Material.DRIED_KELP, 1);
         ItemMeta ventCleanMeta = ventCleanTool.getItemMeta();
-        ventCleanMeta.setDisplayName(Utils.formatText("&CLEAN VENT TASK / RIGHT CLICK A VENT TO TOGGLE IT"));
+        ventCleanMeta.setDisplayName(Utils.formatText("&9CLEAN VENT TASK / RIGHT CLICK A VENT TO TOGGLE IT"));
         ventCleanTool.setItemMeta(ventCleanMeta);
 
         ItemStack customTool = new ItemStack(Material.ENCHANTING_TABLE, 1);
@@ -141,6 +144,36 @@ public class Editor {
         player.sendMessage(Utils
                 .formatText(
                         "&a&l[VILLAGE]&r&a Task Editor enabled. Use any of the tools to make tasks. Break a task to remove it."));
+    }
+
+    public void enableSabotageEditor(Player player) {
+        Inventory playerInventory = player.getInventory();
+        playerInventory.clear();
+
+        // give player tools
+        ItemStack stabilizerTool = new ItemStack(Material.REDSTONE_LAMP, 1);
+        ItemMeta stabilizerMeta = stabilizerTool.getItemMeta();
+        stabilizerMeta.setDisplayName(Utils.formatText("&dSTABILIZER SABOTAGE / PLACE 2 TO CREATE"));
+        stabilizerTool.setItemMeta(stabilizerMeta);
+
+        ItemStack reactorTool = new ItemStack(Material.TNT, 1);
+        ItemMeta reactorMeta = reactorTool.getItemMeta();
+        reactorMeta.setDisplayName(Utils.formatText("&eREACTOR SABOTAGE / PLACE 1 TO CREATE"));
+        reactorTool.setItemMeta(reactorMeta);
+
+        ItemStack exitTool = new ItemStack(Material.BARRIER, 1);
+        ItemMeta exitMeta = exitTool.getItemMeta();
+        exitMeta.setDisplayName(Utils.formatText("&cEXIT EDITOR"));
+        exitTool.setItemMeta(exitMeta);
+
+        playerInventory.addItem(stabilizerTool);
+        playerInventory.addItem(reactorTool);
+        playerInventory.addItem(exitTool);
+
+        village.getEditor().addEditor(player.getUniqueId(), EditorState.SABOTAGE);
+        player.sendMessage(Utils
+                .formatText(
+                        "&a&l[VILLAGE]&r&a Sabotage Editor enabled. Use any of the tools to make sabotages. Break a sabotage to remove it."));
     }
 
     /**

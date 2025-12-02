@@ -4,10 +4,15 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
+import org.bukkit.Sound;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.CompassMeta;
 
+import ca.ckay9.Utils;
+import ca.ckay9.Game.Mobs.Sabotage;
 import ca.ckay9.Game.Villagers.UploadPart;
 import ca.ckay9.Game.Villagers.VillagerTask;
 import ca.ckay9.Game.Villagers.VillagerTaskType;
@@ -43,6 +48,16 @@ public class GameLoop implements Runnable {
         this.ticksInCurrentState = value;
     }
 
+    /**
+     * Uses the ticks to determine when a second shouldve pasts
+     * 
+     * @param seconds How many seconds should have passed
+     * @return True if that many seconds have passed
+     */
+    public boolean onSecond(float seconds) {
+        return this.getTicksSinceStart() % Math.round(20 * seconds) == 0;
+    }
+
     private void villagerOnTick(Player player) {
         if (this.game.hasCompletedAllTasks()) {
             ItemStack item = player.getInventory().getItemInMainHand();
@@ -63,7 +78,35 @@ public class GameLoop implements Runnable {
             }
         }
 
-        if (this.getTicksSinceStart() % 10 == 0) {
+        if (this.game.shouldBlind()) {
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                if (this.game.isPlayerDead(player)) {
+                    continue;
+                }
+
+                double distance = player.getLocation().distance(p.getLocation());
+                if (distance > this.game.getBlindAmount()) {
+                    player.hidePlayer(Utils.getPlugin(), p);
+                } else {
+                    player.showPlayer(Utils.getPlugin(), p);
+                }
+            }
+
+            for (Entity e : player.getWorld().getEntities()) {
+                if (e.getType() != EntityType.ARMOR_STAND || !e.getCustomName().contains(Utils.formatText("&c&lBODY"))) {
+                    continue;
+                }
+
+                double distance = player.getLocation().distance(e.getLocation());
+                if (distance > this.game.getBlindAmount()) {
+                    player.hideEntity(Utils.getPlugin(), e);
+                } else {
+                    player.showEntity(Utils.getPlugin(), e);
+                }
+            }
+        }
+
+        if (onSecond(1 / 2)) {
             for (VillagerTask task : this.game.getVillagerTasks()) {
                 if (!task.assignedToThis(player.getUniqueId())) {
                     continue;
@@ -125,9 +168,24 @@ public class GameLoop implements Runnable {
             }
         }
 
-        if (this.getTicksInCurrentState() % 20 == 0) {
+        if (onSecond(1)) {
             for (VillagerTask task : this.game.getVillagerTasks()) {
                 task.showEffectCloud(this.game);
+            }
+        }
+
+        // sabotage
+        Sabotage activeSabotage = this.game.getActiveSabotage();
+        if (activeSabotage != null) {
+            if (activeSabotage.shouldEndGame(this.getTicksSinceStart())
+                    && this.game.getGameStatus() == Status.PLAYING) {
+                this.game.checkWinCondition();
+            }
+
+            if (onSecond(0.85f)) {
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    p.playSound(activeSabotage.getBlock().getLocation(), Sound.BLOCK_ANVIL_PLACE, 0.45f, 1.1f);
+                }
             }
         }
 

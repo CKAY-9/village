@@ -43,6 +43,11 @@ public class MeetingButtonInteract implements Listener {
             return;
         }
 
+        if (this.game.isSabotageActive()) {
+            player.sendMessage(Utils.formatText("&c&l[MEETING]&r&c Can't start a meeting while a sabotage is on-going."));
+            return;
+        }
+
         if (this.game.ableToVote()) {
             this.game.voteForSkip(player);
             return;

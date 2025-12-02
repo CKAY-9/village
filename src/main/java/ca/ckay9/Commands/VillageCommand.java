@@ -284,6 +284,18 @@ public class VillageCommand implements CommandExecutor {
         sender.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Updated blind amount."));
     }
 
+    private void handleMeetingRadius(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage(
+                    Utils.formatText("&c&l[VILLAGE]&r&c Usage: /village " + args[0].strip() + " number"));
+            return;
+        }
+
+        int radius = Integer.valueOf(args[1].strip());
+        this.village.getGame().setMeetingRadius(radius);
+        sender.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Updated meeting radius."));
+    }
+
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!sender.isOp()) {
@@ -298,6 +310,7 @@ public class VillageCommand implements CommandExecutor {
             if (sender instanceof Player) {
                 sender.sendMessage(Utils.formatText("&a - vent: Activate the Vent Editor"));
                 sender.sendMessage(Utils.formatText("&a - task: Activate the Task Editor"));
+                sender.sendMessage(Utils.formatText("&a - sabotage: Activate the Sabotage Editor"));
                 sender.sendMessage(Utils.formatText("&a - no-edit: Exit any editor"));
             }
             sender.sendMessage(Utils.formatText("&a - meeting world x y z: Set the center of the meeting table"));
@@ -333,12 +346,15 @@ public class VillageCommand implements CommandExecutor {
                     "&a - mob-count number: Set the amount of mobs"));
             sender.sendMessage(Utils.formatText(
                     "&a - blind number: Set how blind Villagers are. Zero will give no blindness."));
+            sender.sendMessage(Utils.formatText(
+                    "&a - table-radius number: Will teleport players this length away from the emergency button."));
             return false;
         }
 
         String subCommand = args[0].toLowerCase().strip();
         if (!(sender instanceof Player)
-                && (subCommand.equals("vent") || subCommand.equals("task") || subCommand.equals("no-edit"))) {
+                && (subCommand.equals("vent") || subCommand.equals("task") || subCommand.equals("sabotage")
+                        || subCommand.equals("no-edit"))) {
             sender.sendMessage(Utils.formatText("&c&l[VILLAGE]&r&c You must be a player to use this command"));
             return false;
         }
@@ -349,6 +365,9 @@ public class VillageCommand implements CommandExecutor {
                 break;
             case "task":
                 this.village.getEditor().enableTaskEditorForPlayer((Player) sender);
+                break;
+            case "sabotage":
+                this.village.getEditor().enableSabotageEditor((Player) sender);
                 break;
             case "meeting":
                 handleMeeting(sender, args);
@@ -406,6 +425,10 @@ public class VillageCommand implements CommandExecutor {
                 break;
             case "blind":
                 handleBlind(sender, args);
+                break;
+            case "meeting-radius":
+                handleMeetingRadius(sender, args);
+                break;
             default:
                 break;
         }

@@ -35,6 +35,7 @@ public class VillageCompletor implements TabCompleter {
                         options.add("no-edit");
                         options.add("vent");
                         options.add("task");
+                        options.add("sabotage");
                     }
 
                     options.add("save");
@@ -49,6 +50,7 @@ public class VillageCompletor implements TabCompleter {
                     options.add("ability-cooldown");
                     options.add("mob-count");
                     options.add("blind");
+                    options.add("table-radius");
                 } else {
                     options.add("end");
                     options.add("force-villager");

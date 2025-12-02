@@ -34,15 +34,32 @@ Mobs are the Impostors of Village. They are supposed to kill every Villager to w
 ### Editor
 
 Before playing Village, you'll want to have a map you can play in. The Village Editor allows
-server operators to place tasks, create and link vents together, and similar actions.
+server operators to place tasks, sabotages, and create vents and link them together.
 
-These editors can be accessed via the `/village task` and `/village vent` commands.
+These editors can be accessed via the `/village task`, `/village sabotage` and `/village vent` commands.
 
 To exit the editor, simply use right click the exit tool or use the command `/village no-edit`.
 
 <div align="center">
     <img src="./assets/editor.png" width=auto height=250 />
 </div>
+
+### Sabotages
+
+Introduced in b1.2, Sabotages can be used by Mobs to distract the Villagers and or to win the game.
+If a sabotage is left unfixed for 45s, it will end the game, giving the win to the Mobs.
+
+Currently there is two sabotages: Reactor and Stabilizer
+
+#### Reactor
+
+To fix the Reactor, a player must enter a set of codes into it. This is represented by an inventory
+with certain items the player must click.
+
+#### Stabilizer
+
+To fix the Stabilizer, two players must both prevent it from shifting to much. This is done by an inventory
+with errors the player must click repeatedly to clear.
 
 ### Tasks
 

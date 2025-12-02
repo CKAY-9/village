@@ -4,5 +4,6 @@ public enum WinCondition {
     NONE,
     TASK_COMPLETION,
     MOB_OVERWHELM,
-    MOBS_VOTED_OUT
+    MOBS_VOTED_OUT,
+    SABOTAGE
 }

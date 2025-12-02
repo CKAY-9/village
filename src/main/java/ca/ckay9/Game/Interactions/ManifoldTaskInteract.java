@@ -46,14 +46,10 @@ public class ManifoldTaskInteract implements Listener {
             return;
         }
 
-        Utils.verboseLog("Found manifold task.");
-
         Integer next = task.getManifoldTaskExpectedNexts().get(player.getUniqueId());
         if (next == null) {
             next = 1;
         }
-
-        Utils.verboseLog("Manifold task next expected found.");
 
         event.setCancelled(true);
         int slot = event.getSlot();
