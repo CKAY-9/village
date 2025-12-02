@@ -45,7 +45,7 @@ public class VillagerTaskInteract implements Listener {
         }
 
         Player player = event.getPlayer();
-        if (!this.game.isPlayerVillager(player) && !Village.inDeveloperDebug()) {
+        if (!this.game.isPlayerVillager(player)) {
             event.setCancelled(true);
             return;
         }
@@ -61,6 +61,8 @@ public class VillagerTaskInteract implements Listener {
         if (this.game.getGameStatus() != Status.PLAYING) {
             return;
         }
+
+        
 
         if (!task.assignedToThis(player.getUniqueId())) {
             player.sendMessage(Utils.formatText("&c&l[TASK]&r&c You aren't assigned to this task."));

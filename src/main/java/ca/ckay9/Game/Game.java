@@ -40,6 +40,7 @@ import ca.ckay9.Village;
 import ca.ckay9.Game.Commands.VoteCommand;
 import ca.ckay9.Game.Commands.VoteCompletor;
 import ca.ckay9.Game.Interactions.BodyInteract;
+import ca.ckay9.Game.Interactions.CleanVentInteract;
 import ca.ckay9.Game.Interactions.MagicWandInteract;
 import ca.ckay9.Game.Interactions.ManifoldTaskInteract;
 import ca.ckay9.Game.Interactions.MeetingButtonInteract;
@@ -134,6 +135,7 @@ public class Game {
         manager.registerEvents(new PlayerJoin(this), village);
         manager.registerEvents(new MagicWandInteract(this), village);
         manager.registerEvents(new ManifoldTaskInteract(this), village);
+        manager.registerEvents(new CleanVentInteract(this), village);
 
         village.getCommand("vote").setExecutor(new VoteCommand(this));
         village.getCommand("vote").setTabCompleter(new VoteCompletor());
@@ -828,6 +830,7 @@ public class Game {
         long distance = 2;
         int i = 0;
         for (Player p : Bukkit.getOnlinePlayers()) {
+            p.closeInventory(); // clear any inventory tasks
             p.playSound(p.getLocation(), Sound.ITEM_GOAT_HORN_SOUND_1, 5, 1);
             p.sendTitle(Utils.formatText("&b&lMEETING"),
                     Utils.formatText("Called by &a&l" + caller.getName() + "&r. " + reason), 20,
@@ -1121,6 +1124,16 @@ public class Game {
     public VillagerTask getManifoldByPlayer(Player player) {
         for (VillagerTask task : this.getVillagerTasks()) {
             if (task.getManifoldTaskExpectedNexts().containsKey(player.getUniqueId())) {
+                return task;
+            }
+        }
+
+        return null;
+    }
+
+    public VillagerTask getCleanVentTaskByPlayer(Player player) {
+        for (VillagerTask task : this.getVillagerTasks()) {
+            if (task.getCleanVentItemPositions().containsKey(player.getUniqueId())) {
                 return task;
             }
         }

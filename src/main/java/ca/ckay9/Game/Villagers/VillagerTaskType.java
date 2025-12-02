@@ -7,6 +7,6 @@ public enum VillagerTaskType {
     UPLOAD,
     MANIFOLD,
     MEDICAL_SCAN,
-    CLEAN_BED,
+    CLEAN_VENT,
     CUSTOM
 }

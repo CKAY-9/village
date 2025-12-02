@@ -64,9 +64,9 @@ public class Village extends JavaPlugin {
 
         String currentVersion = getDescription().getVersion();
         if (lv != null && !currentVersion.equals(lv)) {
-            getLogger().warning("\n\nThis version of Village is out of date. The most recent version is " + lv
+            getLogger().warning("\n\nThis version of Village may be out of date. The most recent version is " + lv
                     + " (installed: " + currentVersion
-                    + ").\nDo I need to update? No, but it probably has more features and bug patches.\n"
+                    + ").\nIf your version is higher, you don't need to do anything.\n\nDo I need to update? No, but it probably has more features and bug patches.\n"
                     + "If you want to update, go here\n - https://github.com/CKAY-9/village\n - https://www.spigotmc.org/resources/village.130487/\n");
         } else {
             getLogger().info("Passed version check. Village is running on the latest version.");

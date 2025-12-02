@@ -7,11 +7,15 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.PlayerInventory;
 
 import ca.ckay9.Utils;
 import ca.ckay9.Game.Game;
+import ca.ckay9.Game.Mobs.Vent;
 import ca.ckay9.Game.Villagers.VillagerTask;
 import ca.ckay9.Game.Villagers.VillagerTaskType;
 
@@ -24,8 +28,64 @@ public class TaskEditor implements Listener {
         this.game = game;
     }
 
+    // used for setting vent to possible vent clean task
     @EventHandler(priority = EventPriority.LOWEST)
-    public void onBlockBreak(BlockBreakEvent event) {
+    public void setVentToCleanVentTask(PlayerInteractEvent event) {
+        // check if right click
+        if (event.getAction() != Action.RIGHT_CLICK_BLOCK) {
+            return;
+        }
+
+        // is in editor
+        Player player = event.getPlayer();
+        EditorState state = this.editor.getEditorStates().get(player.getUniqueId());
+        if (state == null || state != EditorState.TASK) {
+            return;
+        }
+
+        PlayerInventory inv = player.getInventory();
+        Material currentItemType = inv.getItemInMainHand().getType();
+        if (currentItemType != Material.DRIED_KELP) {
+            return;
+        }
+
+        Block block = event.getClickedBlock();
+        if (block.getType() != Material.IRON_TRAPDOOR) {
+            player.sendMessage(Utils.formatText("&c&l[VILLAGE]&r&c Not looking at vent."));
+            return;
+        }
+
+        Location location = block.getLocation();
+        Vent vent = this.game.getVentAtLocation(location);
+        if (vent == null) {
+            player.sendMessage(Utils.formatText("&c&l[VILLAGE]&r&c Not looking at vent."));
+            return;
+        }
+
+        VillagerTask task = this.game.getTaskAtLocation(location);
+        if (task != null) {
+            // remove clean task
+            task.destroy();
+            this.game.removeVillagerTask(task);
+            Utils.verbosePlayerLog(player, "Removed new clean vent task at position " + location.getBlockX() + ", "
+                    + location.getBlockY() + ", " + location.getBlockZ());
+            player.sendMessage(Utils
+                    .formatText(
+                            "&a&l[VILLAGE]&r&a Removed clean vent task! Right click to enable."));
+        } else {
+            task = new VillagerTask(block);
+            task.setTaskType(VillagerTaskType.CLEAN_VENT);
+            this.game.addVillagerTask(task);
+            Utils.verbosePlayerLog(player, "Created new clean vent task at position " + location.getBlockX() + ", "
+                    + location.getBlockY() + ", " + location.getBlockZ());
+            player.sendMessage(Utils
+                    .formatText(
+                            "&a&l[VILLAGE]&r&a Set vent to clean vent task! Right click to disable."));
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void breakTaskEvent(BlockBreakEvent event) {
         Block block = event.getBlock();
         VillagerTask task = game.getTaskAtLocation(block.getLocation());
         if (task == null) {
@@ -49,7 +109,7 @@ public class TaskEditor implements Listener {
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
-    public void onBlockPlace(BlockPlaceEvent event) {
+    public void placeNewTask(BlockPlaceEvent event) {
         // is in editor
         Player player = event.getPlayer();
         EditorState state = this.editor.getEditorStates().get(player.getUniqueId());

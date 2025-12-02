@@ -112,6 +112,11 @@ public class Editor {
         scanMeta.setDisplayName(Utils.formatText("&aMEDICAL SCAN TASK / PLACE TO CREATE"));
         scanTool.setItemMeta(scanMeta);
 
+        ItemStack ventCleanTool = new ItemStack(Material.DRIED_KELP, 1);
+        ItemMeta ventCleanMeta = ventCleanTool.getItemMeta();
+        ventCleanMeta.setDisplayName(Utils.formatText("&CLEAN VENT TASK / RIGHT CLICK A VENT TO TOGGLE IT"));
+        ventCleanTool.setItemMeta(ventCleanMeta);
+
         ItemStack customTool = new ItemStack(Material.ENCHANTING_TABLE, 1);
         ItemMeta customMeta = customTool.getItemMeta();
         customMeta.setDisplayName(Utils.formatText("&8CUSTOM TASK / &c&lNON-IMPLEMENTED"));
@@ -128,6 +133,7 @@ public class Editor {
         playerInventory.addItem(manifoldTool);
         playerInventory.addItem(scanTool);
         playerInventory.addItem(uploadTool);
+        playerInventory.addItem(ventCleanTool);
         playerInventory.addItem(customTool);
         playerInventory.addItem(exitTool);
 

@@ -33,14 +33,18 @@ public class VillagerTask {
     private HashMap<UUID, Boolean> assignedVillagers;
     private VillagerTaskType taskType;
     private HashMap<UUID, Integer> manifoldTaskExpectedNext; // used only for manifold tasks
-    private UUID scanning = null; // used only for medical scan tasks
-    private AreaEffectCloud effectCloud;
+    private UUID scanning; // used only for medical scan tasks
+    private AreaEffectCloud effectCloud; // used for showing players if they have the task or not
+    private HashMap<UUID, ArrayList<Integer>> cleanVentItems;
 
     public VillagerTask(Block block) {
         this.block = block;
         this.assignedVillagers = new HashMap<>();
         this.taskType = VillagerTaskType.MATH;
         this.manifoldTaskExpectedNext = new HashMap<>();
+        this.scanning = null;
+        this.cleanVentItems = new HashMap<>();
+        this.effectCloud = null;
     }
 
     public VillagerTask(Block block, HashMap<UUID, Boolean> assignedVillagers) {
@@ -48,6 +52,9 @@ public class VillagerTask {
         this.assignedVillagers = assignedVillagers;
         this.taskType = VillagerTaskType.MATH;
         this.manifoldTaskExpectedNext = new HashMap<>();
+        this.scanning = null;
+        this.cleanVentItems = new HashMap<>();
+        this.effectCloud = null;
     }
 
     public VillagerTask(Block block, HashMap<UUID, Boolean> assignedVillagers, VillagerTaskType taskType) {
@@ -55,6 +62,29 @@ public class VillagerTask {
         this.assignedVillagers = assignedVillagers;
         this.taskType = taskType;
         this.manifoldTaskExpectedNext = new HashMap<>();
+        this.scanning = null;
+        this.cleanVentItems = new HashMap<>();
+        this.effectCloud = null;
+    }
+
+    public void setCleanVentItemPositions(HashMap<UUID, ArrayList<Integer>> positions) {
+        this.cleanVentItems = positions;
+    }
+
+    public void addCleanVentItemPositions(UUID playerUUID, ArrayList<Integer> positions) {
+        this.cleanVentItems.put(playerUUID, positions);
+    }
+
+    public HashMap<UUID, ArrayList<Integer>> getCleanVentItemPositions() {
+        return this.cleanVentItems;
+    }
+
+    public ArrayList<Integer> getCleanVentPositionsForPlayer(UUID playerUUID) {
+        return this.getCleanVentItemPositions().get(playerUUID);
+    }
+
+    public void removeCleanVentPositionsForPlayer(UUID playerUUID) {
+        this.cleanVentItems.remove(playerUUID);
     }
 
     public AreaEffectCloud getEffectCloud() {
@@ -229,6 +259,47 @@ public class VillagerTask {
         }, 200L);
     }
 
+    private void cleanVentTask(Player player, Game game) {
+        player.closeInventory();
+
+        Inventory inv = Bukkit.createInventory(null, 54, Utils.formatText("&e&lCLEAN VENT"));
+        inv.clear();
+
+        ArrayList<Integer> positions = new ArrayList<>();
+        Random random = new Random();
+        for (int i = 0; i < 8; i++) {
+            positions.add(random.nextInt(0, 54));
+        }
+
+        for (int i = 0; i < positions.size(); i++) {
+            ItemStack stack = new ItemStack(Material.DEAD_BUSH);
+            int randomGarbage = random.nextInt(5);
+            switch (randomGarbage) {
+                case 0:
+                    stack.setType(Material.BONE);
+                    break;
+                case 1:
+                    stack.setType(Material.STICK);
+                    break;
+                case 2:
+                    stack.setType(Material.COBWEB);
+                case 3:
+                    stack.setType(Material.ROTTEN_FLESH);
+                    break;
+                case 4:
+                    stack.setType(Material.DEAD_BUSH);
+                    break;
+                default:
+                    break;
+            }
+
+            inv.setItem(positions.get(i), stack);
+        }
+
+        this.addCleanVentItemPositions(player.getUniqueId(), positions);
+        player.openInventory(inv);
+    }
+
     private void uploadTask(Player player, Game game) {
         UUID playerUUID = player.getUniqueId();
 
@@ -334,6 +405,8 @@ public class VillagerTask {
             uploadTask(player, game);
         } else if (this.getTaskType() == VillagerTaskType.MEDICAL_SCAN) {
             medicalScanTask(player, game);
+        } else if (this.getTaskType() == VillagerTaskType.CLEAN_VENT) {
+            cleanVentTask(player, game);
         } else {
             manifoldTask(player, game);
         }

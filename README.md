@@ -85,6 +85,10 @@ Similar to Among Us' upload task, each map can have an upload task that every Vi
 
 A Villager has to stand in the medical scanner for 10s. While scanning, other Villagers with the same task cannot use the scanner.
 
+#### Clean Vent Task
+
+A Villager has to clean up a vent by clicking on items in an inventory.
+
 #### Custom Task
 
 A custom task is something server operators can add to Village. They are just custom versions
