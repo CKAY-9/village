@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="./assets/icon.png" width=250 height=250 />
+    <img src="https://i.imgur.com/xeirIck.png" width=250 height=250 />
 </div>
 
 A Werewolf inspired deduction gamemode in Minecraft.
@@ -20,16 +20,25 @@ Once a meeting is called, players will be teleported to the meeting teleport to 
 They are able to evict a player by majority vote, or just go onto the next day.
 
 <div align="center">
-    <img src="./assets/meeting.png" width=auto height=250 />
+    <img src="https://i.imgur.com/27i3ojV.png" width=450 height=auto />
 </div>
 
 #### Villagers
 
 Villagers are the Crewmates of Village. They are given tasks and can have special roles like Medic (can revive dead bodies), Detective (can kill and check time of death).
 
+<div align="center">
+    <img src="https://i.imgur.com/tlSg6NU.png" width=450 height=auto />
+</div>
+
 #### Mobs
 
 Mobs are the Impostors of Village. They are supposed to kill every Villager to win. Similar to the Villagers, Mobs are also able to have special roles like Sweeper (hides bodies temporarily) and Wizard (switches locations of people). 
+
+
+<div align="center">
+    <img src="https://i.imgur.com/Gs7MDHJ.png" width=450 height=auto />
+</div>
 
 ### Editor
 
@@ -41,8 +50,17 @@ These editors can be accessed via the `/village task`, `/village sabotage` and `
 To exit the editor, simply use right click the exit tool or use the command `/village no-edit`.
 
 <div align="center">
-    <img src="./assets/editor.png" width=auto height=250 />
+    <img src="https://i.imgur.com/35BCQQA.png" width=auto height=250 />
 </div>
+
+<div align="center">
+    <img src="https://i.imgur.com/Sfvs07E.png" width=auto height=250 />
+</div>
+
+<div align="center">
+    <img src="https://i.imgur.com/BSoCyMu.png" width=auto height=250 />
+</div>
+
 
 ### Sabotages
 
@@ -56,19 +74,23 @@ Currently there is two sabotages: Reactor and Stabilizer
 To fix the Reactor, a player must enter a set of codes into it. This is represented by an inventory
 with certain items the player must click.
 
+<div align="center">
+    <img src="https://i.imgur.com/5SvvTKG.png" width=auto height=250 />
+</div>
+
 #### Stabilizer
 
 To fix the Stabilizer, two players must both prevent it from shifting to much. This is done by an inventory
 with errors the player must click repeatedly to clear.
 
+<div align="center">
+    <img src="https://i.imgur.com/4rjyqmN.png" width=auto height=250 />
+</div>
+
 ### Tasks
 
 As mentioned before, there are tasks in Village. A lot of these tasks are based off of the tasks found in Among Us; however, there are ones unique to Village like a crafting,
 doing simple math, etc. All of these tasks can be placed and removed by server operators to give whatever experience you want.
-
-<div align="center">
-    <img src="./assets/crafttask.png" width=auto height=250 />
-</div>
 
 #### Math Task
 
@@ -120,6 +142,11 @@ Although a "secondary" feature, Village does offer a developer mode and verbose 
 There is two different configs in Village. The first one is the global config. This is responsible for things like developer mode, verbose logging, or other plugin wide changes.
 The other config is individual world/build configs. Server operators are able load and save configs by using the `/village load (id: optional)` and `/village save (id: optional)` commands.
 By default, the ID is just the world name, but you can load any config from any world as long as you know the ID (check the `worlds.yml` file). To see all possible configuration options, check `/village` and the generated Village folder.
+
+<div align="center">
+    <img src="https://i.imgur.com/RHjyUyJ.png" width=auto height=250 />
+</div>
+
 
 ## How do I play Village?
 
