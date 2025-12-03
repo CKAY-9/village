@@ -55,7 +55,7 @@ public class GameLoop implements Runnable {
      * @return True if that many seconds have passed
      */
     public boolean onSecond(float seconds) {
-        return this.getTicksSinceStart() % Math.round(20 * seconds) == 0;
+        return this.getTicksSinceStart() % Math.max(Math.round(20 * seconds), 1) == 0;
     }
 
     private void villagerOnTick(Player player) {
@@ -93,7 +93,8 @@ public class GameLoop implements Runnable {
             }
 
             for (Entity e : player.getWorld().getEntities()) {
-                if (e.getType() != EntityType.ARMOR_STAND || !e.getCustomName().contains(Utils.formatText("&c&lBODY"))) {
+                if (e.getType() != EntityType.ARMOR_STAND
+                        || !e.getCustomName().contains(Utils.formatText("&c&lBODY"))) {
                     continue;
                 }
 
@@ -106,7 +107,7 @@ public class GameLoop implements Runnable {
             }
         }
 
-        if (onSecond(1 / 2)) {
+        if (onSecond(0.5f)) {
             for (VillagerTask task : this.game.getVillagerTasks()) {
                 if (!task.assignedToThis(player.getUniqueId())) {
                     continue;

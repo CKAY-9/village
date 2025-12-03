@@ -426,7 +426,7 @@ public class VillageCommand implements CommandExecutor {
             case "blind":
                 handleBlind(sender, args);
                 break;
-            case "meeting-radius":
+            case "table-radius":
                 handleMeetingRadius(sender, args);
                 break;
             default:
