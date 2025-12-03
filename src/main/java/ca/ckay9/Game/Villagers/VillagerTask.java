@@ -497,6 +497,14 @@ public class VillagerTask {
         return this.taskType;
     }
 
+    public void hideToPlayer(Player player) {
+        if (this.getEffectCloud() == null) {
+            return;
+        }
+
+        player.hideEntity(Utils.getPlugin(), player);
+    }
+
     public void showEffectCloud(Game game) {
         createEffectCloud();
         for (Player player : Bukkit.getOnlinePlayers()) {
