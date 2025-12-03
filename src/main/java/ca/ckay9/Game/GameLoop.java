@@ -110,6 +110,7 @@ public class GameLoop implements Runnable {
         if (onSecond(0.5f)) {
             for (VillagerTask task : this.game.getVillagerTasks()) {
                 if (!task.assignedToThis(player.getUniqueId())) {
+                    task.hideToPlayer(player);
                     continue;
                 }
 

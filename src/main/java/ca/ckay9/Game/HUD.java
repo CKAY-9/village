@@ -144,7 +144,7 @@ public class HUD {
 
         StringBuilder taskCompletion = new StringBuilder();
         taskCompletion.append("&8Task Completion: ");
-        int amount = (int) Math.ceil(this.game.getCompletedTaskPercent() / 10);
+        int amount = (int) Math.min(Math.ceil(this.game.getCompletedTaskPercent() / 10), 10);
         if (amount == 0) {
             taskCompletion.append("&a&l□");
         }

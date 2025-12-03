@@ -667,24 +667,10 @@ public class Game {
     }
 
     public int getAmountOfCompletedTasksByPlayer(UUID playerUUID) {
-        boolean countedUpload = !this.uploadTaskCreated();
         int count = 0;
         for (VillagerTask task : this.getVillagerTasks()) {
             if (!task.assignedToThis(playerUUID)) {
                 continue;
-            }
-
-            if (task.getTaskType() == VillagerTaskType.UPLOAD && countedUpload) {
-                continue;
-            }
-
-            UploadPart part = this.getUploadParts().get(playerUUID);
-            if (task.getTaskType() == VillagerTaskType.UPLOAD && !countedUpload) {
-                if (part != null && part != UploadPart.COPYING) {
-                    count++;
-                    countedUpload = true;
-                    continue;
-                }
             }
 
             if (task.hasCompleted(playerUUID)) {

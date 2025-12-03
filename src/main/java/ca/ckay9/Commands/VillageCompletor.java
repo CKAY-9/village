@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
@@ -55,6 +56,14 @@ public class VillageCompletor implements TabCompleter {
                     options.add("end");
                     options.add("force-villager");
                     options.add("force-mob");
+                }
+                break;
+            case 2:
+                String subCommand = args[0].strip().toLowerCase();
+                if (subCommand.equals("force-villager") || subCommand.equals("force-mob")) {
+                    for (Player player : Bukkit.getOnlinePlayers()) {
+                        options.add(player.getName());
+                    }
                 }
                 break;
             default:
