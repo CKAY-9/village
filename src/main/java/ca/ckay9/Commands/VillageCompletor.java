@@ -31,6 +31,7 @@ public class VillageCompletor implements TabCompleter {
                 if (!this.game.isGameInProgress()) {
                     options.add("meeting");
                     options.add("spawn");
+                    options.add("lobby");
                     options.add("start");
                     if (sender instanceof Player) {
                         options.add("no-edit");
@@ -57,6 +58,10 @@ public class VillageCompletor implements TabCompleter {
                     options.add("force-villager");
                     options.add("force-mob");
                 }
+
+                options.add("go-lobby");
+                options.add("go-meeting");
+                options.add("go-spawn");
                 break;
             case 2:
                 String subCommand = args[0].strip().toLowerCase();

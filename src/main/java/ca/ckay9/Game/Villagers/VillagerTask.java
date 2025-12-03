@@ -309,8 +309,8 @@ public class VillagerTask {
             return;
         }
 
-        if (game.isFirstPartUpload(this.getBlock().getLocation()) && part != null) {
-            player.sendMessage(Utils.formatText("&c&l[UPLOAD TASK]&r&c You've have already copied the files."));
+        if (game.isFirstPartUpload(this.getBlock().getLocation()) && (part != null && part != UploadPart.COPYING)) {
+            player.sendMessage(Utils.formatText("&e&l[UPLOAD TASK]&r&e You've have already copied the files."));
             return;
         }
 
@@ -497,23 +497,57 @@ public class VillagerTask {
         return this.taskType;
     }
 
+    /**
+     * Will hide the effect cloud for this task for the player
+     * @param player Who to hide
+     */
+    @SuppressWarnings("deprecation")
     public void hideToPlayer(Player player) {
         if (this.getEffectCloud() == null) {
             return;
         }
 
-        player.hideEntity(Utils.getPlugin(), player);
+        player.hideEntity(Utils.getPlugin(), this.getEffectCloud());
     }
 
-    public void showEffectCloud(Game game) {
-        createEffectCloud();
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            if (!game.isGameInProgress() || game.getGameStatus() != Status.PLAYING
-                    || !this.assignedToThis(player.getUniqueId()) || this.hasCompleted(player.getUniqueId())) {
-                player.hideEntity(Utils.getPlugin(), this.getEffectCloud());
-            } else if (!this.hasCompleted(player.getUniqueId())) {
-                player.showEntity(Utils.getPlugin(), this.getEffectCloud());
+    /**
+     * Automatically handles if parts of tasks should be hidden or not (e.g. upload)
+     * Will create effect cloud if it doesnt exist
+     * Reveal effect cloud and draw particles for player
+     * 
+     * @param player Who to show the task
+     * @param game
+     */
+    @SuppressWarnings("deprecation")
+    public void showToPlayer(Player player, Game game) {
+        UploadPart currentPart = game.getUploadParts().get(player.getUniqueId());
+        Location loc = this.getBlock().getLocation();
+        if (this.getTaskType() == VillagerTaskType.UPLOAD) {
+            if (currentPart != null) {
+                if ((currentPart != UploadPart.COPIED) && !game.isFirstPartUpload(loc)) {
+                    this.hideToPlayer(player);
+                    return;
+                }
+
+                if ((currentPart != UploadPart.UPLOADED) && game.isFirstPartUpload(loc)) {
+                    this.hideToPlayer(player);
+                    return;
+                }
+            } else if (!game.isFirstPartUpload(loc)) {
+                this.hideToPlayer(player);
+                return;
             }
+        }
+
+        if (this.getEffectCloud() == null) {
+            createEffectCloud();
+        }
+
+        player.showEntity(Utils.getPlugin(), this.getEffectCloud());
+        for (double y = 0; y < 2.5; y += 0.2) {
+            player.spawnParticle(Particle.END_ROD,
+                    loc.clone().add(0.5, y, 0.5),
+                    1, 0, 0, 0, 0);
         }
     }
 

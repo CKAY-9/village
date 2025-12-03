@@ -77,6 +77,36 @@ public class VillageCommand implements CommandExecutor {
         sender.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Updated spawn location."));
     }
 
+    public void handleLobby(CommandSender sender, String[] args) {
+        if (args.length < 5) {
+            if (!(sender instanceof Player)) {
+                sender.sendMessage(
+                        Utils.formatText("&c&l[VILLAGE]&r&c Usage: /village lobby world x y z."));
+                return;
+            }
+
+            sender.sendMessage(
+                    Utils.formatText("&a&l[VILLAGE]&r&a Invalid arguments, using your position as lobby location."));
+            this.village.getGame().setLobbyLocation(((Player) sender).getLocation());
+        } else {
+            String worldName = args[1].strip();
+            World world = Bukkit.getWorld(worldName);
+            if (world == null) {
+                sender.sendMessage(
+                        Utils.formatText("&c&l[VILLAGE]&r&c Failed to set world."));
+                return;
+            }
+
+            double x = Double.valueOf(args[2].strip());
+            double y = Double.valueOf(args[3].strip());
+            double z = Double.valueOf(args[4].strip());
+
+            this.village.getGame().setLobbyLocation(new Location(world, x, y, z));
+        }
+
+        sender.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Updated lobby location."));
+    }
+
     private void handleForceVillager(CommandSender sender, String[] args) {
         if (!this.village.getGame().isGameInProgress()) {
             return;
@@ -140,23 +170,16 @@ public class VillageCommand implements CommandExecutor {
     }
 
     private void handleLoad(CommandSender sender, String[] args) {
-        if (args.length < 3) {
+        if (args.length < 2) {
             sender.sendMessage(
-                    Utils.formatText("&c&l[VILLAGE]&r&c Usage: /village load world id"));
+                    Utils.formatText("&c&l[VILLAGE]&r&c Usage: /village load id"));
             return;
         }
 
-        String loadTargetID = args[2].strip();
+        String loadTargetID = args[1].strip();
         sender.sendMessage(Utils.formatText("&e&l[VILLAGE]&r&e Loading " + loadTargetID + " config..."));
-        String worldNameToLoad = args[1].strip();
 
-        World worldToLoad = Bukkit.getWorld(worldNameToLoad);
-        if (worldToLoad == null) {
-            sender.sendMessage(Utils.formatText("&c&l[VILLAGE]&r&c Failed to load world!"));
-            return;
-        }
-
-        if (this.village.getGame().loadFromSaveID(worldToLoad, loadTargetID)) {
+        if (this.village.getGame().loadFromSaveID(loadTargetID)) {
             sender.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Loaded " + loadTargetID + " config."));
         } else {
             sender.sendMessage(
@@ -296,6 +319,45 @@ public class VillageCommand implements CommandExecutor {
         sender.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Updated meeting radius."));
     }
 
+    private void handleGoLobby(CommandSender sender, String[] args) {
+        if (this.village.getGame().getLobbyLocation() == null) {
+            sender.sendMessage(Utils.formatText("&c&l[VILLAGE]&r&c Failed to teleport to lobby. Invalid lobby location."));
+            return;
+        }
+
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            player.teleport(this.village.getGame().getLobbyLocation());
+        }
+
+        sender.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Teleported to lobby."));
+    }
+
+    private void handleGoSpawn(CommandSender sender, String[] args) {
+        if (this.village.getGame().getSpawnLocation() == null) {
+            sender.sendMessage(Utils.formatText("&c&l[VILLAGE]&r&c Failed to teleport to spawn. Invalid spawn location."));
+            return;
+        }
+
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            player.teleport(this.village.getGame().getSpawnLocation());
+        }
+
+        sender.sendMessage(Utils.formatText("&a&l[VILLAGE] Teleported to spawn."));
+    }
+
+    private void handleGoMeeting(CommandSender sender, String[] args) {
+        if (this.village.getGame().getMeetingLocation() == null) {
+            sender.sendMessage(Utils.formatText("&c&l[VILLAGE]&r&c Failed to teleport to meeting location. Invalid meeting location."));
+            return;
+        }
+
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            player.teleport(this.village.getGame().getMeetingLocation());
+        }
+
+        sender.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Teleported to lobby."));
+    }
+
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!sender.isOp()) {
@@ -314,6 +376,8 @@ public class VillageCommand implements CommandExecutor {
                 sender.sendMessage(Utils.formatText("&a - no-edit: Exit any editor"));
             }
             sender.sendMessage(Utils.formatText("&a - meeting world x y z: Set the center of the meeting table"));
+            sender.sendMessage(
+                    Utils.formatText("&a - lobby world x y z: Set the lobby location for pre-game and post-game"));
             sender.sendMessage(Utils.formatText("&a - spawn world x y z: Set the center of the spawn"));
             sender.sendMessage(Utils.formatText("&a - start: Start a game of Village"));
             sender.sendMessage(Utils.formatText("&a - end: End a game of Village"));
@@ -348,6 +412,12 @@ public class VillageCommand implements CommandExecutor {
                     "&a - blind number: Set how blind Villagers are. Zero will give no blindness."));
             sender.sendMessage(Utils.formatText(
                     "&a - table-radius number: Will teleport players this length away from the emergency button."));
+            sender.sendMessage(Utils.formatText(
+                    "&a - go-lobby: Teleport all players to the lobby location if there is one."));
+            sender.sendMessage(Utils.formatText(
+                    "&a - go-spawn: Teleport all players to the spawn location if there is one."));
+            sender.sendMessage(Utils.formatText(
+                    "&a - go-meeting: Teleport all players to the meeting location if there is one."));
             return false;
         }
 
@@ -428,6 +498,18 @@ public class VillageCommand implements CommandExecutor {
                 break;
             case "table-radius":
                 handleMeetingRadius(sender, args);
+                break;
+            case "lobby":
+                handleLobby(sender, args);
+                break;
+            case "go-lobby":
+                handleGoLobby(sender, args);
+                break;
+            case "go-meeting":
+                handleGoMeeting(sender, args);
+                break;
+            case "go-spawn":
+                handleGoSpawn(sender, args);
                 break;
             default:
                 break;

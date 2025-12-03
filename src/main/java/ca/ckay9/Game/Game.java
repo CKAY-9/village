@@ -68,6 +68,7 @@ public class Game {
     private Status status; // current game status
     private Location spawnLocation; // where players are teleported to on game start
     private Location meetingLocation; // the center of meetings, players spawn around this location
+    private Location lobbyLocation; // the location players go before and after Village matches
     private ArmorStand meetingButton; // this acts as a custom button to start meetings
     private ArrayList<VillagerTask> villagerTasks; // all created tasks
     private HashMap<UUID, Role> playerRoles; // villager or mob => sub roles
@@ -110,6 +111,7 @@ public class Game {
         this.playerRoles = new HashMap<>();
         this.spawnLocation = null;
         this.meetingLocation = null;
+        this.lobbyLocation = null;
         this.meetingButton = null;
         this.chatTaskExpectedResults = new HashMap<>();
         this.craftTaskExpectedResults = new HashMap<>();
@@ -158,6 +160,14 @@ public class Game {
 
         village.getCommand("vote").setExecutor(new VoteCommand(this));
         village.getCommand("vote").setTabCompleter(new VoteCompletor());
+    }
+
+    public void setLobbyLocation(Location location) {
+        this.lobbyLocation = location;
+    }
+
+    public Location getLobbyLocation() {
+        return this.lobbyLocation;
     }
 
     public long getLastTimeSabotageWasDisarmed() {
@@ -1238,7 +1248,11 @@ public class Game {
             p.setHealth(20);
             p.setSaturation(20);
             p.setGameMode(GameMode.SURVIVAL);
-            p.teleport(this.getSpawnLocation());
+            if (this.getLobbyLocation() != null) {
+                p.teleport(this.getLobbyLocation());
+            } else {
+                p.teleport(this.getSpawnLocation());
+            }
             p.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
 
             p.setFlying(false);
@@ -1776,6 +1790,7 @@ public class Game {
                 Storage.worldsData.set(tasks + "task" + i + ".type", task.getTaskType().toString());
 
                 Location loc = task.getBlock().getLocation();
+                Storage.worldsData.set(tasks + "task" + i + ".worldName", loc.getWorld().getName());
                 Storage.worldsData.set(tasks + "task" + i + ".x", loc.getBlockX());
                 Storage.worldsData.set(tasks + "task" + i + ".y", loc.getBlockY());
                 Storage.worldsData.set(tasks + "task" + i + ".z", loc.getBlockZ());
@@ -1790,6 +1805,7 @@ public class Game {
                 Storage.worldsData.set(sabotages + "sabotage" + i + ".type", sabotage.getSabotageType().toString());
 
                 Location loc = sabotage.getBlock().getLocation();
+                Storage.worldsData.set(sabotages + "sabotage" + i + ".worldName", loc.getWorld().getName());
                 Storage.worldsData.set(sabotages + "sabotage" + i + ".x", loc.getBlockX());
                 Storage.worldsData.set(sabotages + "sabotage" + i + ".y", loc.getBlockY());
                 Storage.worldsData.set(sabotages + "sabotage" + i + ".z", loc.getBlockZ());
@@ -1802,6 +1818,7 @@ public class Game {
             String vents = root + "vents.";
             for (Vent vent : this.getMobVents()) {
                 Location loc = vent.getBlock().getLocation();
+                Storage.worldsData.set(vents + i + ".worldName", loc.getWorld().getName());
                 Storage.worldsData.set(vents + i + ".x", loc.getX());
                 Storage.worldsData.set(vents + i + ".y", loc.getY());
                 Storage.worldsData.set(vents + i + ".z", loc.getZ());
@@ -1809,6 +1826,7 @@ public class Game {
                 int j = 0;
                 for (Vent connectedVent : vent.getConnectedVents()) {
                     Location l = connectedVent.getBlock().getLocation();
+                    Storage.worldsData.set(vents + i + ".vents." + j + ".worldName", l.getWorld().getName());
                     Storage.worldsData.set(vents + i + ".vents." + j + ".x", l.getX());
                     Storage.worldsData.set(vents + i + ".vents." + j + ".y", l.getY());
                     Storage.worldsData.set(vents + i + ".vents." + j + ".z", l.getZ());
@@ -1821,15 +1839,27 @@ public class Game {
             // meeting location
             if (this.getMeetingLocation() != null) {
                 String meetingLoc = root + "meeting.";
+                Storage.worldsData.set(meetingLoc + ".worldName", this.getMeetingLocation().getWorld().getName());
                 Storage.worldsData.set(meetingLoc + "x", this.getMeetingLocation().getX());
                 Storage.worldsData.set(meetingLoc + "y", this.getMeetingLocation().getY());
                 Storage.worldsData.set(meetingLoc + "z", this.getMeetingLocation().getZ());
                 Utils.verboseLog("Saved meeting location.");
             }
 
+            // lobby location
+            if (this.getLobbyLocation() != null) {
+                String lobbyLoc = root + "lobby.";
+                Storage.worldsData.set(lobbyLoc + ".worldName", this.getLobbyLocation().getWorld().getName());
+                Storage.worldsData.set(lobbyLoc + "x", this.getLobbyLocation().getX());
+                Storage.worldsData.set(lobbyLoc + "y", this.getLobbyLocation().getY());
+                Storage.worldsData.set(lobbyLoc + "z", this.getLobbyLocation().getZ());
+                Utils.verboseLog("Saved lobby location.");
+            }
+
             // spawn location
             if (this.getSpawnLocation() != null) {
                 String spawnLoc = root + "spawn.";
+                Storage.worldsData.set(spawnLoc + ".worldName", this.getSpawnLocation().getWorld().getName());
                 Storage.worldsData.set(spawnLoc + "x", this.getSpawnLocation().getX());
                 Storage.worldsData.set(spawnLoc + "y", this.getSpawnLocation().getY());
                 Storage.worldsData.set(spawnLoc + "z", this.getSpawnLocation().getZ());
@@ -1852,7 +1882,7 @@ public class Game {
      * @param id    The id of the config
      * @return True if successful, false if otherwise
      */
-    public boolean loadFromSaveID(World world, String id) {
+    public boolean loadFromSaveID(String id) {
         ConfigurationSection section = Storage.worldsData.getConfigurationSection("saved." + id);
         if (section == null) {
             return false;
@@ -1864,9 +1894,7 @@ public class Game {
             }
 
             task.destroy();
-            removeVillagerTask(task);
         }
-
         this.villagerTasks.clear();
 
         for (Vent vent : this.getMobVents()) {
@@ -1886,7 +1914,6 @@ public class Game {
 
             sabotage.destroy();
         }
-
         this.sabotages.clear();
 
         Utils.verboseLog("Loading gameplay values...");
@@ -1901,17 +1928,38 @@ public class Game {
         this.setBlindAmount(section.getInt("blind", 1));
         Utils.verboseLog("Loaded gameplay values!");
 
-        this.setSpawnLocation(new Location(
-                world,
-                section.getDouble("spawn.x", 0),
-                section.getDouble("spawn.y", 0), section.getDouble("spawn.z", 0)));
-        Utils.verboseLog("Loaded spawn location!");
+        if (section.isSet("spawn.x")) {
+            World world = Bukkit.getWorld(section.getString("spawn.worldName", "world"));
+            if (world != null) {
+                this.setSpawnLocation(new Location(
+                        world,
+                        section.getDouble("spawn.x", 0),
+                        section.getDouble("spawn.y", 0), section.getDouble("spawn.z", 0)));
+                Utils.verboseLog("Loaded spawn location!");
+            }
+        }
 
-        this.setMeetingLocation(new Location(
-                world,
-                section.getDouble("meeting.x", 0),
-                section.getDouble("meeting.y", 0), section.getDouble("meeting.z", 0)));
-        Utils.verboseLog("Loaded meeting location!");
+        if (section.isSet("meeting.x")) {
+            World world = Bukkit.getWorld(section.getString("meeting.worldName", "world"));
+            if (world != null) {
+                this.setMeetingLocation(new Location(
+                        world,
+                        section.getDouble("meeting.x", 0),
+                        section.getDouble("meeting.y", 0), section.getDouble("meeting.z", 0)));
+                Utils.verboseLog("Loaded meeting location!");
+            }
+        }
+
+        if (section.isSet("lobby.x")) {
+            World world = Bukkit.getWorld(section.getString("lobby.worldName", "world"));
+            if (world != null) {
+                this.setLobbyLocation(new Location(
+                        world,
+                        section.getDouble("lobby.x", 0),
+                        section.getDouble("lobby.y", 0), section.getDouble("lobby.z", 0)));
+                Utils.verboseLog("Loaded lobby location!");
+            }
+        }
 
         ConfigurationSection savedTasks = section.getConfigurationSection("tasks");
         if (savedTasks != null) {
@@ -1919,6 +1967,11 @@ public class Game {
             for (String key : savedTasks.getKeys(false)) {
                 ConfigurationSection savedTask = savedTasks.getConfigurationSection(key);
                 if (savedTask == null) {
+                    continue;
+                }
+
+                World world = Bukkit.getWorld(savedTask.getString("worldName", "world"));
+                if (world == null) {
                     continue;
                 }
 
@@ -1941,6 +1994,11 @@ public class Game {
             for (String key : savedSabotages.getKeys(false)) {
                 ConfigurationSection savedSabotage = savedSabotages.getConfigurationSection(key);
                 if (savedSabotage == null) {
+                    continue;
+                }
+
+                World world = Bukkit.getWorld(savedSabotage.getString("worldName", "world"));
+                if (world == null) {
                     continue;
                 }
 
@@ -1971,6 +2029,11 @@ public class Game {
                     continue;
                 }
 
+                World world = Bukkit.getWorld(savedVent.getString("worldName", "world"));
+                if (world == null) {
+                    continue;
+                }
+
                 Block block = world.getBlockAt((int) savedVent.getDouble("x"), (int) savedVent.getDouble("y"),
                         (int) savedVent.getDouble("z"));
                 block.setType(Material.IRON_TRAPDOOR);
@@ -1994,6 +2057,11 @@ public class Game {
 
                 ConfigurationSection linkedVents = savedVent.getConfigurationSection("vents");
                 if (linkedVents == null) {
+                    continue;
+                }
+
+                World world = Bukkit.getWorld(savedVent.getString("worldName", "world"));
+                if (world == null) {
                     continue;
                 }
 

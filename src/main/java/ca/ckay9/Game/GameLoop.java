@@ -1,9 +1,7 @@
 package ca.ckay9.Game;
 
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -13,9 +11,7 @@ import org.bukkit.inventory.meta.CompassMeta;
 
 import ca.ckay9.Utils;
 import ca.ckay9.Game.Mobs.Sabotage;
-import ca.ckay9.Game.Villagers.UploadPart;
 import ca.ckay9.Game.Villagers.VillagerTask;
-import ca.ckay9.Game.Villagers.VillagerTaskType;
 
 /*
     This is responsible for the main game loop of Village. Keeps track of timings and everything related to the gameplay.
@@ -58,6 +54,7 @@ public class GameLoop implements Runnable {
         return this.getTicksSinceStart() % Math.max(Math.round(20 * seconds), 1) == 0;
     }
 
+    @SuppressWarnings("deprecation")
     private void villagerOnTick(Player player) {
         if (this.game.hasCompletedAllTasks()) {
             ItemStack item = player.getInventory().getItemInMainHand();
@@ -106,37 +103,6 @@ public class GameLoop implements Runnable {
                 }
             }
         }
-
-        if (onSecond(0.5f)) {
-            for (VillagerTask task : this.game.getVillagerTasks()) {
-                if (!task.assignedToThis(player.getUniqueId())) {
-                    task.hideToPlayer(player);
-                    continue;
-                }
-
-                if (task.hasCompleted(player.getUniqueId())) {
-                    continue;
-                }
-
-                UploadPart part = this.game.getUploadParts().get(player.getUniqueId());
-                if (task.getTaskType() == VillagerTaskType.UPLOAD) {
-                    if (this.game.isFirstPartUpload(task.getBlock().getLocation()) && part != null) {
-                        continue;
-                    }
-
-                    if (!this.game.isFirstPartUpload(task.getBlock().getLocation()) && part != UploadPart.COPIED) {
-                        continue;
-                    }
-                }
-
-                Location loc = task.getBlock().getLocation();
-                for (double y = 0; y < 2.5; y += 0.2) {
-                    player.spawnParticle(Particle.END_ROD,
-                            loc.clone().add(0.5, y, 0.5),
-                            1, 0, 0, 0, 0);
-                }
-            }
-        }
     }
 
     private void decreaseKillCooldownOnTick(Player player) {
@@ -170,12 +136,6 @@ public class GameLoop implements Runnable {
             }
         }
 
-        if (onSecond(1)) {
-            for (VillagerTask task : this.game.getVillagerTasks()) {
-                task.showEffectCloud(this.game);
-            }
-        }
-
         // sabotage
         Sabotage activeSabotage = this.game.getActiveSabotage();
         if (activeSabotage != null) {
@@ -192,6 +152,18 @@ public class GameLoop implements Runnable {
         }
 
         for (Player p : Bukkit.getOnlinePlayers()) {
+            if (onSecond(1f)) {
+                for (VillagerTask task : this.game.getVillagerTasks()) {
+                    if (!this.game.isPlayerVillager(p) || !task.assignedToThis(p.getUniqueId())
+                            || task.hasCompleted(p.getUniqueId())) {
+                        task.hideToPlayer(p);
+                        continue;
+                    }
+
+                    task.showToPlayer(p, game);
+                }
+            }
+
             if (this.game.isPlayerVillager(p)) {
                 villagerOnTick(p);
             } else {

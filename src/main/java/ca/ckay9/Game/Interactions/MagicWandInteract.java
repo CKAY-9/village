@@ -59,6 +59,8 @@ public class MagicWandInteract implements Listener {
 
         event.setCancelled(true);
         List<Player> shuffled = new ArrayList<>(Bukkit.getOnlinePlayers());
+        // remove all dead players
+        shuffled.removeIf(p -> !this.game.isPlayerDead(p));
         Collections.shuffle(shuffled);
         int i = 0;
         for (Player p : Bukkit.getOnlinePlayers()) {

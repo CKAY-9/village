@@ -62,8 +62,6 @@ public class VillagerTaskInteract implements Listener {
             return;
         }
 
-        
-
         if (!task.assignedToThis(player.getUniqueId())) {
             player.sendMessage(Utils.formatText("&c&l[TASK]&r&c You aren't assigned to this task."));
             return;

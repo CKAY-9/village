@@ -4,7 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.URL;
+import java.net.URI;
 
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -48,8 +48,8 @@ public class Village extends JavaPlugin {
     private void checkVersion() {
         String lv = "0.0.0";
         try {
-            URL url = new URL("https://api.spigotmc.org/legacy/update.php?resource=130487");
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            URI uri = URI.create("https://api.spigotmc.org/legacy/update.php?resource=130487");
+            HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
             connection.setRequestMethod("GET");
             connection.setConnectTimeout(5000);
             connection.setReadTimeout(5000);
