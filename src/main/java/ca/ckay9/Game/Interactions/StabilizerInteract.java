@@ -79,7 +79,7 @@ public class StabilizerInteract implements Listener {
         player.closeInventory();
 
         if (sabotage.solvedStabilizer()) {
-            sabotage.deactivate(game);
+            sabotage.deactivate(game, false);
         } else {
             player.sendMessage(Utils.formatText("&a&l[SABOTAGE]&r&a Waiting for secondary confirmation..."));
         }

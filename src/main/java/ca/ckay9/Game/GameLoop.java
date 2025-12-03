@@ -149,10 +149,16 @@ public class GameLoop implements Runnable {
                     p.playSound(activeSabotage.getBlock().getLocation(), Sound.BLOCK_ANVIL_PLACE, 0.45f, 1.1f);
                 }
             }
+
+            if (onSecond(0.1f)) {
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    activeSabotage.drawDirectionTo(p);
+                }
+            }
         }
 
         for (Player p : Bukkit.getOnlinePlayers()) {
-            if (onSecond(1f)) {
+            if (onSecond(0.1f)) {
                 for (VillagerTask task : this.game.getVillagerTasks()) {
                     if (!this.game.isPlayerVillager(p) || !task.assignedToThis(p.getUniqueId())
                             || task.hasCompleted(p.getUniqueId())) {

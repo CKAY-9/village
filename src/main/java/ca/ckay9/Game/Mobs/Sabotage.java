@@ -31,6 +31,7 @@ public class Sabotage {
     private HashMap<UUID, ReactorProgress> reactorProgress;
     private long started; // when the sabotage when called
     private AreaEffectCloud effect;
+    private HashMap<UUID, AreaEffectCloud> pointers;
 
     // how long sabotages last before ending game in ticks
     public static long SABOTAGE_TIME = Utils.secondsToTicks(45);
@@ -41,6 +42,63 @@ public class Sabotage {
         this.active = false;
         this.reactorProgress = new HashMap<>();
         this.stabilzierProgress = new HashMap<>();
+        this.pointers = new HashMap<>();
+    }
+
+    public HashMap<UUID, AreaEffectCloud> getPointers() {
+        return this.pointers;
+    }
+
+    public void setPointers(HashMap<UUID, AreaEffectCloud> pointers) {
+        this.pointers = pointers;
+    }
+
+    public void addPointer(UUID playerUUID, AreaEffectCloud cloud) {
+        this.pointers.put(playerUUID, cloud);
+    }
+
+    @SuppressWarnings("deprecation")
+    public void drawDirectionTo(Player player) {
+        if (!isActive()) {
+            AreaEffectCloud pointer = this.getPointers().get(player.getUniqueId());
+            if (pointer != null) {
+                player.hideEntity(Utils.getPlugin(), pointer);
+            }
+            return;
+        }
+
+        Location spawnLocation = Utils.validPointerLocation(player.getLocation(), this.getBlock().getLocation(), 4,
+                0.1);
+        if (spawnLocation == null) {
+            return;
+        }
+
+        AreaEffectCloud pointer = this.getPointers().get(player.getUniqueId());
+        if (pointer == null) {
+            pointer = (AreaEffectCloud) this.getBlock().getWorld().spawnEntity(spawnLocation,
+                    EntityType.AREA_EFFECT_CLOUD);
+        }
+
+        pointer.setInvulnerable(true);
+        pointer.setGravity(false);
+
+        pointer.teleport(spawnLocation);
+        pointer.setDuration(Integer.MAX_VALUE);
+        pointer.setRadius(0.75f);
+        pointer.setParticle(Particle.REDSTONE, new Particle.DustOptions(Color.RED, 3f));
+        pointer.setWaitTime(0);
+        pointer.setReapplicationDelay(0);
+
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            if (!p.getUniqueId().equals(player.getUniqueId())) {
+                p.hideEntity(Utils.getPlugin(), pointer);
+                continue;
+            }
+
+            p.showEntity(Utils.getPlugin(), pointer);
+        }
+
+        this.addPointer(player.getUniqueId(), pointer);
     }
 
     public long getStartedTicks() {
@@ -348,8 +406,8 @@ public class Sabotage {
         cloud.setGravity(false);
         cloud.teleport(cloudLoc);
         cloud.setDuration(Integer.MAX_VALUE);
-        cloud.setRadius(2f);
-        cloud.setParticle(Particle.REDSTONE, new Particle.DustOptions(Color.RED, 1.5f));
+        cloud.setRadius(1f);
+        cloud.setParticle(Particle.REDSTONE, new Particle.DustOptions(Color.RED, 2f));
         cloud.setWaitTime(0);
         cloud.setReapplicationDelay(0);
 
@@ -385,18 +443,24 @@ public class Sabotage {
         this.setActive(true);
     }
 
-    public void deactivate(Game game) {
+    public void deactivate(Game game, boolean silent) {
         this.setActive(false);
         this.removeEffectCloud();
+
+        for (AreaEffectCloud cloud : this.getPointers().values()) {
+            cloud.remove();
+        }
 
         this.started = 0;
         this.reactorProgress.clear();
         this.stabilzierProgress.clear();
         game.setLastTimeSabotageWasDisarmed(game.getGameLoop().getTicksSinceStart());
 
-        for (Player p : Bukkit.getOnlinePlayers()) {
-            p.sendMessage(Utils.formatText("&a&l[SABOTAGE]&r&a Fixed."));
-            p.playSound(this.getBlock().getLocation(), Sound.BLOCK_NOTE_BLOCK_CHIME, 1, 1);
+        if (!silent) {
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                p.sendMessage(Utils.formatText("&a&l[SABOTAGE]&r&a Fixed."));
+                p.playSound(this.getBlock().getLocation(), Sound.BLOCK_NOTE_BLOCK_CHIME, 1, 1);
+            }
         }
     }
 }

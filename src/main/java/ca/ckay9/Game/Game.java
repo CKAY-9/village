@@ -1005,7 +1005,7 @@ public class Game {
     public void startDiscussion(Player caller, String reason) {
         this.setGameStatus(Status.DISCUSSION);
         for (Sabotage sabotage : this.getSabotages()) {
-            sabotage.deactivate(this);
+            sabotage.deactivate(this, true);
         }
 
         Bukkit.broadcastMessage(
@@ -1235,6 +1235,9 @@ public class Game {
 
         for (VillagerTask task : this.getVillagerTasks()) {
             task.getAssignedVillagers().clear();
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                task.hideToPlayer(p);
+            }
         }
         Utils.verboseLog("Cleared task data.");
 
@@ -1279,6 +1282,7 @@ public class Game {
 
         for (Sabotage sabotage : this.getSabotages()) {
             sabotage.getReactorProgress().clear();
+            sabotage.deactivate(this, true);
             sabotage.setActive(false);
         }
 

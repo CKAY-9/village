@@ -73,7 +73,7 @@ public class ReactorInteract implements Listener {
         if (completed >= 5) {
             // finished
             sabotage.addReactorProgress(player.getUniqueId(), null);
-            sabotage.deactivate(this.game);
+            sabotage.deactivate(this.game, false);
             player.closeInventory();
         } else {
             progress.setCompleted(completed);

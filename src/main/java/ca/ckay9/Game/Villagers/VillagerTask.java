@@ -36,6 +36,7 @@ public class VillagerTask {
     private UUID scanning; // used only for medical scan tasks
     private AreaEffectCloud effectCloud; // used for showing players if they have the task or not
     private HashMap<UUID, ArrayList<Integer>> cleanVentItems;
+    private HashMap<UUID, AreaEffectCloud> pointers;
 
     public VillagerTask(Block block) {
         this.block = block;
@@ -45,6 +46,7 @@ public class VillagerTask {
         this.scanning = null;
         this.cleanVentItems = new HashMap<>();
         this.effectCloud = null;
+        this.pointers = new HashMap<>();
     }
 
     public VillagerTask(Block block, HashMap<UUID, Boolean> assignedVillagers) {
@@ -55,6 +57,7 @@ public class VillagerTask {
         this.scanning = null;
         this.cleanVentItems = new HashMap<>();
         this.effectCloud = null;
+        this.pointers = new HashMap<>();
     }
 
     public VillagerTask(Block block, HashMap<UUID, Boolean> assignedVillagers, VillagerTaskType taskType) {
@@ -65,6 +68,19 @@ public class VillagerTask {
         this.scanning = null;
         this.cleanVentItems = new HashMap<>();
         this.effectCloud = null;
+        this.pointers = new HashMap<>();
+    }
+
+    public HashMap<UUID, AreaEffectCloud> getPointers() {
+        return this.pointers;
+    }
+
+    public void setPointers(HashMap<UUID, AreaEffectCloud> pointers) {
+        this.pointers = pointers;
+    }
+
+    public void addPointer(UUID playerUUID, AreaEffectCloud cloud) {
+        this.pointers.put(playerUUID, cloud);
     }
 
     public void setCleanVentItemPositions(HashMap<UUID, ArrayList<Integer>> positions) {
@@ -499,15 +515,77 @@ public class VillagerTask {
 
     /**
      * Will hide the effect cloud for this task for the player
+     * 
      * @param player Who to hide
      */
     @SuppressWarnings("deprecation")
     public void hideToPlayer(Player player) {
+        AreaEffectCloud pointer = this.getPointers().get(player.getUniqueId());
+        if (pointer != null) {
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                if (!p.getUniqueId().equals(player.getUniqueId())) {
+                    p.hideEntity(Utils.getPlugin(), pointer);
+                    continue;
+                }
+
+                p.showEntity(Utils.getPlugin(), pointer);
+            }
+
+            pointer.remove();
+            this.getPointers().remove(player.getUniqueId());
+        }
+
         if (this.getEffectCloud() == null) {
             return;
         }
 
         player.hideEntity(Utils.getPlugin(), this.getEffectCloud());
+    }
+
+    /**
+     * This casts a ray from the player to this task.
+     * On block collision toward the task, it spawns an area effect cloud.
+     * Will fail if player and task arent in the same world.
+     * 
+     * @param player Who to draw
+     */
+    @SuppressWarnings("deprecation")
+    public void drawDirectionTo(Player player) {
+        if (hasCompleted(player.getUniqueId())) {
+            return;
+        }
+
+        Location spawnLocation = Utils.validPointerLocation(player.getLocation(), this.getBlock().getLocation(), 4,
+                0.1);
+        if (spawnLocation == null) {
+            return;
+        }
+
+        AreaEffectCloud pointer = this.getPointers().get(player.getUniqueId());
+        if (pointer == null) {
+            pointer = (AreaEffectCloud) this.getBlock().getWorld().spawnEntity(spawnLocation,
+                    EntityType.AREA_EFFECT_CLOUD);
+        }
+
+        pointer.setInvulnerable(true);
+        pointer.setGravity(false);
+        pointer.teleport(spawnLocation);
+        pointer.setDuration(Integer.MAX_VALUE);
+        pointer.setRadius(0.5f);
+        pointer.setParticle(Particle.REDSTONE, new Particle.DustOptions(Color.LIME, 1.5f));
+        pointer.setWaitTime(0);
+        pointer.setReapplicationDelay(0);
+
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            if (!p.getUniqueId().equals(player.getUniqueId())) {
+                p.hideEntity(Utils.getPlugin(), pointer);
+                continue;
+            }
+
+            p.showEntity(Utils.getPlugin(), pointer);
+        }
+
+        this.addPointer(player.getUniqueId(), pointer);
     }
 
     /**
@@ -543,6 +621,8 @@ public class VillagerTask {
             createEffectCloud();
         }
 
+        this.drawDirectionTo(player);
+
         player.showEntity(Utils.getPlugin(), this.getEffectCloud());
         for (double y = 0; y < 2.5; y += 0.2) {
             player.spawnParticle(Particle.END_ROD,
@@ -554,11 +634,11 @@ public class VillagerTask {
     public void createEffectCloud() {
         AreaEffectCloud cloud = this.getEffectCloud();
         Location cloudLoc = this.getBlock().getLocation().add(0.5, 0.5, 0.5);
-        if (cloud == null) {
+        if (cloud == null || cloud.isDead()) {
             cloud = (AreaEffectCloud) this.getBlock().getWorld().spawnEntity(cloudLoc,
                     EntityType.AREA_EFFECT_CLOUD);
         }
-
+        
         cloud.setInvulnerable(true);
         cloud.setGravity(false);
         cloud.teleport(cloudLoc);

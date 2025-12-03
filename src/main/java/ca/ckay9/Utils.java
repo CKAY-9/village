@@ -2,8 +2,10 @@ package ca.ckay9;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.util.Vector;
 
 public class Utils {
     public static String formatText(String s) {
@@ -31,6 +33,40 @@ public class Utils {
         }
 
         Utils.getPlugin().getLogger().info(log);
+    }
+
+    /**
+     * @param start Where the ray starts
+     * @param end Where it ends
+     * @param maxDistance How far should the ray go
+     * @param step How much should the ray travel each iteration
+     * @return A location on the ray that is either maxDistance away or the first block hit, null if failed
+     */
+    public static Location validPointerLocation(Location start, Location end, double maxDistance, double step) {
+        if (!start.getWorld().getUID().equals(end.getWorld().getUID())) {
+            return null;
+        }
+
+        Vector direction = end.toVector().subtract(start.toVector()).normalize();
+        double distance = Math.min(start.distance(end), maxDistance);
+
+        Location validLocation = null;
+        for (double d = 0; d < distance; d += step) {
+            Location point = start.clone().add(direction.clone().multiply(d));
+
+            if (point.getBlock().getType().isSolid()) {
+                validLocation = point.subtract(direction.clone().multiply(0.1));
+                break;
+            }
+        }
+
+        if (validLocation == null) {
+            validLocation = start.clone().add(direction.multiply(distance));
+        }
+
+        validLocation.add(0, 1, 0);
+
+        return validLocation;
     }
 
     public static void verboseLog(String message) {
