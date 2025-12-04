@@ -78,6 +78,7 @@ public class GameLoop implements Runnable {
         if (this.game.shouldBlind()) {
             for (Player p : Bukkit.getOnlinePlayers()) {
                 if (this.game.isPlayerDead(player)) {
+                    player.hidePlayer(Utils.getPlugin(), p);
                     continue;
                 }
 
@@ -162,11 +163,21 @@ public class GameLoop implements Runnable {
                 for (VillagerTask task : this.game.getVillagerTasks()) {
                     if (!this.game.isPlayerVillager(p) || !task.assignedToThis(p.getUniqueId())
                             || task.hasCompleted(p.getUniqueId())) {
-                        task.hideToPlayer(p);
+                        task.hideFromPlayer(p);
                         continue;
                     }
 
                     task.showToPlayer(p, game);
+                }
+            }
+
+            if (this.game.isPlayerDead(p)) {
+                for (Player pl : Bukkit.getOnlinePlayers()) {
+                    if (this.game.isPlayerDead(pl)) {
+                        pl.showPlayer(Utils.getPlugin(), p);
+                        continue;
+                    }
+                    pl.hidePlayer(Utils.getPlugin(), p);
                 }
             }
 

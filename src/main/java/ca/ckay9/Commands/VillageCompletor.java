@@ -34,6 +34,7 @@ public class VillageCompletor implements TabCompleter {
                     options.add("spawn");
                     options.add("lobby");
                     options.add("start");
+                    options.add("slow");
                     if (sender instanceof Player) {
                         options.add("no-edit");
                         options.add("vent");

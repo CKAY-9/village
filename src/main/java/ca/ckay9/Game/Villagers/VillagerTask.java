@@ -519,7 +519,7 @@ public class VillagerTask {
      * @param player Who to hide
      */
     @SuppressWarnings("deprecation")
-    public void hideToPlayer(Player player) {
+    public void hideFromPlayer(Player player) {
         AreaEffectCloud pointer = this.getPointers().get(player.getUniqueId());
         if (pointer != null) {
             for (Player p : Bukkit.getOnlinePlayers()) {
@@ -573,7 +573,7 @@ public class VillagerTask {
         pointer.setGravity(false);
         pointer.teleport(spawnLocation);
         pointer.setDuration(Integer.MAX_VALUE);
-        pointer.setRadius(0.5f);
+        pointer.setRadius(0.4f);
         pointer.setParticle(Particle.REDSTONE, new Particle.DustOptions(Color.LIME, 1.5f));
         pointer.setWaitTime(0);
         pointer.setReapplicationDelay(0);
@@ -603,16 +603,16 @@ public class VillagerTask {
         if (this.getTaskType() == VillagerTaskType.UPLOAD) {
             if (currentPart != null) {
                 if ((currentPart != UploadPart.COPIED) && !game.isFirstPartUpload(loc)) {
-                    this.hideToPlayer(player);
+                    this.hideFromPlayer(player);
                     return;
                 }
 
                 if ((currentPart != UploadPart.UPLOADED) && game.isFirstPartUpload(loc)) {
-                    this.hideToPlayer(player);
+                    this.hideFromPlayer(player);
                     return;
                 }
             } else if (!game.isFirstPartUpload(loc)) {
-                this.hideToPlayer(player);
+                this.hideFromPlayer(player);
                 return;
             }
         }

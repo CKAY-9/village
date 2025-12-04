@@ -22,7 +22,6 @@ import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.ArmorStand;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EntityEquipment;
@@ -32,6 +31,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 import ca.ckay9.Storage;
 import ca.ckay9.Utils;
@@ -100,6 +100,7 @@ public class Game {
     public HashSet<Sabotage> sabotages; // the list of possible sabotages
     private int meetingTableRadius; // how far away players should be teleported from the button
     private long lastTimeSabotageWasDisarmed; // last time sabotage was disarmed in ticks
+    private int slowAmount;
 
     public static long SABOTAGE_COOLDOWN = Utils.secondsToTicks(90);
 
@@ -138,6 +139,7 @@ public class Game {
         this.sabotages = new HashSet<>();
         this.meetingTableRadius = 2;
         this.lastTimeSabotageWasDisarmed = 0;
+        this.slowAmount = 0;
 
         PluginManager manager = village.getServer().getPluginManager();
         manager.registerEvents(new VentInteract(this), village);
@@ -160,6 +162,18 @@ public class Game {
 
         village.getCommand("vote").setExecutor(new VoteCommand(this));
         village.getCommand("vote").setTabCompleter(new VoteCompletor());
+    }
+
+    public int getSlowAmount() {
+        return this.slowAmount;
+    }
+
+    public void setSlowAmount(int value) {
+        this.slowAmount = value;
+    }
+
+    public boolean shouldSlow() {
+        return this.slowAmount >= 1;
     }
 
     public void setLobbyLocation(Location location) {
@@ -752,6 +766,11 @@ public class Game {
             }
         }
 
+        if (shouldSlow()) {
+            player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, Integer.MAX_VALUE, this.getSlowAmount(),
+                    false, false, false));
+        }
+
         if (this.getVillagerTasks().size() > 0) {
             List<VillagerTask> copy = new ArrayList<>(this.getVillagerTasks());
             copy.removeIf(task -> task.getTaskType() == VillagerTaskType.UPLOAD);
@@ -820,6 +839,11 @@ public class Game {
         }
         player.setHealth(20);
         player.setSaturation(20);
+
+        if (shouldSlow()) {
+            player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, Integer.MAX_VALUE, this.getSlowAmount(),
+                    false, false, false));
+        }
 
         ItemStack knife = new ItemStack(Material.NETHERITE_SWORD, 1);
         ItemMeta knifeMeta = knife.getItemMeta();
@@ -1041,6 +1065,8 @@ public class Game {
     public void startVoting() {
         this.setGameStatus(Status.VOTING);
         Bukkit.broadcastMessage(Utils.formatText("&b&l[MEETING]&r&b Voting started."));
+        Bukkit.broadcastMessage(
+                Utils.formatText("&b&l[MEETING]&r&b Vote a player by right clicking on them or using /vote."));
         Utils.verboseLog("Started voting.");
 
         for (Player p : Bukkit.getOnlinePlayers()) {
@@ -1208,6 +1234,69 @@ public class Game {
         }
     }
 
+    public void cleanup() {
+        Utils.verboseLog("Cleaning up...");
+
+        this.chatTaskExpectedResults.clear();
+        this.craftTaskExpectedResults.clear();
+        Utils.verboseLog("Cleared expected result maps.");
+
+        for (VillagerTask task : this.getVillagerTasks()) {
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                task.hideFromPlayer(p);
+            }
+
+            task.getAssignedVillagers().clear();
+        }
+        Utils.verboseLog("Cleared task data.");
+
+        for (World world : Bukkit.getWorlds()) {
+            world.getEntities().removeIf(entity -> {
+                if (entity.getCustomName() == null) {
+                    return false;
+                }
+
+                if (!entity.getCustomName().contains(Utils.formatText("&c&lBODY"))) {
+                    return false;
+                }
+
+                entity.teleport(new Location(entity.getWorld(), 0, 0, 0));
+                return true;
+            });
+        }
+
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                p.showPlayer(Utils.getPlugin(), player);
+                player.showPlayer(Utils.getPlugin(), p);
+            }
+        }
+
+        for (Sabotage sabotage : this.getSabotages()) {
+            sabotage.getReactorProgress().clear();
+            sabotage.deactivate(this, true);
+            sabotage.setActive(false);
+        }
+
+        this.playerRoles.clear();
+        this.killCooldowns.clear();
+        this.abilityCooldowns.clear();
+        this.deadPlayers.clear();
+        this.buttonUses.clear();
+        this.votes.clear();
+        this.chatTaskExpectedResults.clear();
+        this.craftTaskExpectedResults.clear();
+        this.completedAllTasks = false;
+
+        this.gameLoop = null;
+        if (gameLoopID != -1) {
+            Bukkit.getScheduler().cancelTask(gameLoopID);
+            this.gameLoopID = -1;
+        }
+
+        Utils.verboseLog("Cleaned up.");
+    }
+
     /**
      * Attempts to end a Village game. Will fail if no gaming in progress.
      * This does not display the results of the match, as in who won. Only cleans up
@@ -1226,20 +1315,6 @@ public class Game {
             }
             return;
         }
-
-        Utils.verboseLog("Ending Village game. Cleaning up.");
-
-        this.chatTaskExpectedResults.clear();
-        this.craftTaskExpectedResults.clear();
-        Utils.verboseLog("Cleared expected result maps.");
-
-        for (VillagerTask task : this.getVillagerTasks()) {
-            task.getAssignedVillagers().clear();
-            for (Player p : Bukkit.getOnlinePlayers()) {
-                task.hideToPlayer(p);
-            }
-        }
-        Utils.verboseLog("Cleared task data.");
 
         // cleanup players
         List<Player> players = new ArrayList<>(Bukkit.getOnlinePlayers());
@@ -1265,41 +1340,7 @@ public class Game {
         }
         Utils.verboseLog("Ending Village game. Cleaned up players.");
 
-        // cleanup bodies
-        for (Entity entity : players.get(0).getWorld().getEntities()) {
-            if (entity.getType() != EntityType.ARMOR_STAND) {
-                continue;
-            }
-
-            ArmorStand stand = (ArmorStand) entity;
-            if (!stand.getCustomName().contains(Utils.formatText("&c&lBODY"))) {
-                continue;
-            }
-
-            stand.teleport(new Location(stand.getWorld(), 0, 0, 0));
-            stand.remove();
-        }
-
-        for (Sabotage sabotage : this.getSabotages()) {
-            sabotage.getReactorProgress().clear();
-            sabotage.deactivate(this, true);
-            sabotage.setActive(false);
-        }
-
-        this.playerRoles.clear();
-        this.killCooldowns.clear();
-        this.abilityCooldowns.clear();
-        this.deadPlayers.clear();
-        this.buttonUses.clear();
-        this.votes.clear();
-        this.chatTaskExpectedResults.clear();
-        this.craftTaskExpectedResults.clear();
-        this.completedAllTasks = false;
-
-        this.gameLoop = null;
-        Bukkit.getScheduler().cancelTask(gameLoopID);
-        this.gameLoopID = -1;
-        Utils.verboseLog("Ending Village game. Game loop cleaned up.");
+        cleanup();
 
         this.setGameStatus(Status.NO_GAME);
         Utils.verboseLog("Ended Village game. Finished.");
@@ -1786,6 +1827,8 @@ public class Game {
             Storage.worldsData.set(root + "taskWin", this.canWinOnTasks());
             Storage.worldsData.set(root + "abilityCooldown", this.getAbilityCooldown());
             Storage.worldsData.set(root + "blind", this.getBlindAmount());
+            Storage.worldsData.set(root + "tableRadius", this.getMeetingTableRadius());
+            Storage.worldsData.set(root + "slow", this.getSlowAmount());
             Utils.verboseLog("Saved gameplay values!");
 
             int i = 0;
@@ -1928,8 +1971,10 @@ public class Game {
         this.setMeetingButtonCooldown(section.getLong("buttonTime", this.getMeetingButtonCooldown()));
         this.setMaxMeetingButtonUses(section.getInt("maxButtons", this.getMaxMeetingButtonUses()));
         this.setAllowTaskWin(section.getBoolean("taskWin", this.canWinOnTasks()));
-        this.setAbilityCooldown(section.getLong("abilityCooldown", 500));
-        this.setBlindAmount(section.getInt("blind", 1));
+        this.setAbilityCooldown(section.getLong("abilityCooldown", this.getAbilityCooldown()));
+        this.setBlindAmount(section.getInt("blind", this.getBlindAmount()));
+        this.setSlowAmount(section.getInt("slow", this.getSlowAmount()));
+        this.setMeetingRadius(section.getInt("tableRadius", this.getMeetingTableRadius()));
         Utils.verboseLog("Loaded gameplay values!");
 
         if (section.isSet("spawn.x")) {

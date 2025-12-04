@@ -319,9 +319,22 @@ public class VillageCommand implements CommandExecutor {
         sender.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Updated meeting radius."));
     }
 
+    private void handleSlow(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage(
+                    Utils.formatText("&c&l[VILLAGE]&r&c Usage: /village " + args[0].strip() + " number"));
+            return;
+        }
+
+        int radius = Integer.valueOf(args[1].strip());
+        this.village.getGame().setSlowAmount(radius);
+        sender.sendMessage(Utils.formatText("&a&l[VILLAGE]&r&a Updated slow."));
+    }
+
     private void handleGoLobby(CommandSender sender, String[] args) {
         if (this.village.getGame().getLobbyLocation() == null) {
-            sender.sendMessage(Utils.formatText("&c&l[VILLAGE]&r&c Failed to teleport to lobby. Invalid lobby location."));
+            sender.sendMessage(
+                    Utils.formatText("&c&l[VILLAGE]&r&c Failed to teleport to lobby. Invalid lobby location."));
             return;
         }
 
@@ -334,7 +347,8 @@ public class VillageCommand implements CommandExecutor {
 
     private void handleGoSpawn(CommandSender sender, String[] args) {
         if (this.village.getGame().getSpawnLocation() == null) {
-            sender.sendMessage(Utils.formatText("&c&l[VILLAGE]&r&c Failed to teleport to spawn. Invalid spawn location."));
+            sender.sendMessage(
+                    Utils.formatText("&c&l[VILLAGE]&r&c Failed to teleport to spawn. Invalid spawn location."));
             return;
         }
 
@@ -347,7 +361,8 @@ public class VillageCommand implements CommandExecutor {
 
     private void handleGoMeeting(CommandSender sender, String[] args) {
         if (this.village.getGame().getMeetingLocation() == null) {
-            sender.sendMessage(Utils.formatText("&c&l[VILLAGE]&r&c Failed to teleport to meeting location. Invalid meeting location."));
+            sender.sendMessage(Utils
+                    .formatText("&c&l[VILLAGE]&r&c Failed to teleport to meeting location. Invalid meeting location."));
             return;
         }
 
@@ -418,6 +433,8 @@ public class VillageCommand implements CommandExecutor {
                     "&a - go-spawn: Teleport all players to the spawn location if there is one."));
             sender.sendMessage(Utils.formatText(
                     "&a - go-meeting: Teleport all players to the meeting location if there is one."));
+            sender.sendMessage(Utils.formatText(
+                    "&a - slow number: Amount of slow applied to everyone."));
             return false;
         }
 
@@ -510,6 +527,9 @@ public class VillageCommand implements CommandExecutor {
                 break;
             case "go-spawn":
                 handleGoSpawn(sender, args);
+                break;
+            case "slow":
+                handleSlow(sender, args);
                 break;
             default:
                 break;

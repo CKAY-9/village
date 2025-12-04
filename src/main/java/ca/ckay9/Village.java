@@ -95,6 +95,8 @@ public class Village extends JavaPlugin {
     public void onDisable() {
         if (this.game.isGameInProgress()) {
             this.game.end(null);
+        } else {
+            this.game.cleanup();
         }
 
         if (this.game.getMeetingButton() != null) {
