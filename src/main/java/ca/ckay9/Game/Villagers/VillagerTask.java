@@ -565,6 +565,8 @@ public class VillagerTask {
         if (pointer == null) {
             pointer = (AreaEffectCloud) this.getBlock().getWorld().spawnEntity(spawnLocation,
                     EntityType.AREA_EFFECT_CLOUD);
+
+            this.addPointer(player.getUniqueId(), pointer);
         }
 
         pointer.setInvulnerable(true);
@@ -584,8 +586,6 @@ public class VillagerTask {
 
             p.showEntity(Utils.getPlugin(), pointer);
         }
-
-        this.addPointer(player.getUniqueId(), pointer);
     }
 
     /**
@@ -638,7 +638,7 @@ public class VillagerTask {
             cloud = (AreaEffectCloud) this.getBlock().getWorld().spawnEntity(cloudLoc,
                     EntityType.AREA_EFFECT_CLOUD);
         }
-        
+
         cloud.setInvulnerable(true);
         cloud.setGravity(false);
         cloud.teleport(cloudLoc);

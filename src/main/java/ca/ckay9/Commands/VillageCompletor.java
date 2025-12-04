@@ -10,6 +10,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
+import ca.ckay9.Storage;
 import ca.ckay9.Game.Game;
 
 public class VillageCompletor implements TabCompleter {
@@ -68,6 +69,11 @@ public class VillageCompletor implements TabCompleter {
                 if (subCommand.equals("force-villager") || subCommand.equals("force-mob")) {
                     for (Player player : Bukkit.getOnlinePlayers()) {
                         options.add(player.getName());
+                    }
+                }
+                if (subCommand.equals("save") || subCommand.equals("load")) {
+                    for (String key : Storage.worldsData.getConfigurationSection("saved").getKeys(false)) {
+                        options.add(key);
                     }
                 }
                 break;

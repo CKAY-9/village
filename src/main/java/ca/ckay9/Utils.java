@@ -48,6 +48,7 @@ public class Utils {
         }
 
         Vector direction = end.toVector().subtract(start.toVector()).normalize();
+        start = start.clone().add(0, 0.6, 0); // if the player was on a path or slab the path would run into it
         double distance = Math.min(start.distance(end), maxDistance);
 
         Location validLocation = null;
@@ -63,8 +64,6 @@ public class Utils {
         if (validLocation == null) {
             validLocation = start.clone().add(direction.multiply(distance));
         }
-
-        validLocation.add(0, 1, 0);
 
         return validLocation;
     }
